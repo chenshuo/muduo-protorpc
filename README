@@ -1,0 +1,5 @@
+Muduo Protorpc - Google Prorobuf RPC based on Muduo
+Copyright (c) 2012, Shuo Chen.  All rights reserved.
+http://github.com/chenshuo/muduo-protorpc
+
+Requires Muduo 0.3.3 and above.
