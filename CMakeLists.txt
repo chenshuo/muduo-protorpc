@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
 project(muduo-protorpc CXX)
 
@@ -37,11 +37,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -finline-limit=1000 -DNDEBUG")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-find_path(Muduo_INCLUDE_DIR muduo "${MUDUO_PATH}/include")
+find_path(Muduo_INCLUDE_DIR "muduo/base/Types.h" "${MUDUO_PATH}/include")
 find_path(Muduo_LIBRARY_DIR libmuduo_net.a "${MUDUO_PATH}/lib")
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Muduo_LIBRARY_DIR})
-message(STATUS ${Muduo_INCLUDE_DIR})
-message(STATUS ${Muduo_LIBRARY_DIR})
+message(STATUS "Muduo include " ${Muduo_INCLUDE_DIR})
+message(STATUS "Muduo lib " ${Muduo_LIBRARY_DIR})
 
 include_directories(${Muduo_INCLUDE_DIR})
 find_library(muduo_base muduo_base)
@@ -59,6 +59,10 @@ find_package(Protobuf REQUIRED)
 find_path(PROTOBUF_PLUGIN google/protobuf/compiler/cpp/cpp_generator.h)
 
 include_directories(${PROJECT_SOURCE_DIR})
+
+if(NOT muduo_protorpc)
+  message(SEND_ERROR "Cannot find libmuduo_protorpc, did you install protobuf?")
+endif()
 
 add_subdirectory(muduo/protorpc2)
 
