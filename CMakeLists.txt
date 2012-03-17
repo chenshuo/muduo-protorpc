@@ -47,9 +47,11 @@ include_directories(${Muduo_INCLUDE_DIR})
 find_library(muduo_base muduo_base)
 find_library(muduo_net muduo_net)
 find_library(muduo_protorpc muduo_protorpc)
+find_library(muduo_cdns muduo_cdns)
 message(STATUS ${muduo_base})
 message(STATUS ${muduo_net})
 message(STATUS ${muduo_protorpc})
+message(STATUS ${muduo_cdns})
 link_directories(${Muduo_LIBRARY_DIR})
 
 find_package(Boost REQUIRED)
@@ -66,6 +68,5 @@ endif()
 
 add_subdirectory(muduo/protorpc2)
 
-add_subdirectory(examples/sudoku)
-add_subdirectory(examples/rpcbench2)
+add_subdirectory(examples)
 
