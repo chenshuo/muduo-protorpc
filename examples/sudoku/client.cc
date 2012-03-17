@@ -1,4 +1,4 @@
-#include <examples/rpc2/sudoku.pb.h>
+#include <examples/sudoku/sudoku.pb.h>
 
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>

@@ -66,6 +66,6 @@ endif()
 
 add_subdirectory(muduo/protorpc2)
 
-add_subdirectory(examples/rpc2)
+add_subdirectory(examples/sudoku)
 add_subdirectory(examples/rpcbench2)
 

@@ -4,3 +4,6 @@ http://github.com/chenshuo/muduo-protorpc
 
 Requires Muduo 0.3.3 or above.
 Requires Protobuf 2.4.0 or above.
+
+$ sudo apt-get install libprotoc-dev protobuf-compiler
+$ sudo apt-get install libprotobuf-dev cmake

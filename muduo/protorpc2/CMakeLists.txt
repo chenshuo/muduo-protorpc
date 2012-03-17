@@ -1,5 +1,5 @@
 add_executable(protoc-gen-rpc gen.cc)
-target_link_libraries(protoc-gen-rpc protoc pthread)
+target_link_libraries(protoc-gen-rpc protoc protobuf pthread)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion -Wno-extra")
 include_directories(${PROJECT_BINARY_DIR})
