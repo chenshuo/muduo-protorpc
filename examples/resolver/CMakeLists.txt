@@ -1,15 +1,9 @@
-add_custom_command(OUTPUT resolver.pb.cc resolver.pb.h
-  COMMAND protoc
-  ARGS --plugin=${PROJECT_BINARY_DIR}/bin/protoc-gen-rpc --rpc_out . ${CMAKE_CURRENT_SOURCE_DIR}/resolver.proto -I${CMAKE_CURRENT_SOURCE_DIR}
-  COMMAND sed
-  ARGS -i "'s/#include <google\\/protobuf\\/service.h>/#include <muduo\\/protorpc2\\/service.h>/'" resolver.pb.h
-  MAIN_DEPENDENCY resolver.proto
-  DEPENDS protoc-gen-rpc)
+PROTOBUF_GENERATE_RPC(PROTO_SRCS resolver.proto)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion -Wno-extra")
 include_directories(${PROJECT_BINARY_DIR})
 
-add_library(resolver_proto resolver.pb.cc)
+add_library(resolver_proto ${PROTO_SRCS})
 
 #TODO set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion")
 

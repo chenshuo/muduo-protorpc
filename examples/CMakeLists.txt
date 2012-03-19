@@ -1,3 +1,27 @@
+function(PROTOBUF_GENERATE_RPC SRCS)
+  if(NOT ARGN)
+    message(SEND_ERROR "Error: PROTOBUF_GENERATE_RPC() called without any proto files")
+    return()
+  endif(NOT ARGN)
+
+  set(${SRCS})
+  foreach(FIL ${ARGN})
+
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
+    list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc")
+
+    add_custom_command(
+      OUTPUT "${FIL_WE}.pb.cc" "${FIL_WE}.pb.h"
+      COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+      ARGS --plugin=${PROJECT_BINARY_DIR}/bin/protoc-gen-rpc --rpc_out . ${CMAKE_CURRENT_SOURCE_DIR}/${FIL} -I${CMAKE_CURRENT_SOURCE_DIR}
+      COMMAND sed
+      ARGS -i "s/#include <google\\/protobuf\\/service.h>/#include <muduo\\/protorpc2\\/service.h>/" ${FIL_WE}.pb.h
+      MAIN_DEPENDENCY ${FIL}
+      DEPENDS protoc-gen-rpc
+      VERBATIM )
+  endforeach()
+  set(${SRCS} ${${SRCS}} PARENT_SCOPE)
+endfunction()
 
 add_subdirectory(rpcbench2)
 add_subdirectory(sudoku)    # sync response
