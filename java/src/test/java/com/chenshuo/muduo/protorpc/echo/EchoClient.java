@@ -1,4 +1,4 @@
-package com.chenshuo.muduo.rpc.echo;
+package com.chenshuo.muduo.protorpc.echo;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -8,14 +8,14 @@ import java.util.concurrent.Executors;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
+import com.chenshuo.muduo.protorpc.NewChannelCallback;
+import com.chenshuo.muduo.protorpc.RpcChannel;
+import com.chenshuo.muduo.protorpc.RpcClient;
 import com.chenshuo.muduo.protorpc.echo.EchoProto;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoRequest;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoResponse;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoService;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoService.BlockingInterface;
-import com.chenshuo.muduo.rpc.NewChannelCallback;
-import com.chenshuo.muduo.rpc.RpcChannel;
-import com.chenshuo.muduo.rpc.RpcClient;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.ServiceException;
 

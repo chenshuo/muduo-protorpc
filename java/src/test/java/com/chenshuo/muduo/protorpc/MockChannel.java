@@ -1,4 +1,4 @@
-package com.chenshuo.muduo.rpc;
+package com.chenshuo.muduo.protorpc;
 
 import java.net.SocketAddress;
 

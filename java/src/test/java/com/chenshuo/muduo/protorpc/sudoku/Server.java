@@ -1,9 +1,9 @@
-package com.chenshuo.muduo.rpc.sudoku;
+package com.chenshuo.muduo.protorpc.sudoku;
 
+import com.chenshuo.muduo.protorpc.NewChannelCallback;
+import com.chenshuo.muduo.protorpc.RpcChannel;
+import com.chenshuo.muduo.protorpc.RpcServer;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto;
-import com.chenshuo.muduo.rpc.NewChannelCallback;
-import com.chenshuo.muduo.rpc.RpcChannel;
-import com.chenshuo.muduo.rpc.RpcServer;
 
 public class Server {
 

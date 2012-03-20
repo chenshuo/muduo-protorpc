@@ -1,10 +1,10 @@
-package com.chenshuo.muduo.rpc.echo;
+package com.chenshuo.muduo.protorpc.echo;
 
+import com.chenshuo.muduo.protorpc.RpcServer;
 import com.chenshuo.muduo.protorpc.echo.EchoProto;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoRequest;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoResponse;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoService.Interface;
-import com.chenshuo.muduo.rpc.RpcServer;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 

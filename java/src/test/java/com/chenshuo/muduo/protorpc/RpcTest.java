@@ -1,4 +1,4 @@
-package com.chenshuo.muduo.rpc;
+package com.chenshuo.muduo.protorpc;
 
 import static org.junit.Assert.assertEquals;
 
@@ -10,6 +10,9 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.UpstreamMessageEvent;
 import org.junit.Test;
 
+import com.chenshuo.muduo.protorpc.RpcChannel;
+import com.chenshuo.muduo.protorpc.RpcDecoder;
+import com.chenshuo.muduo.protorpc.RpcEncoder;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoRequest;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoService;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto;
@@ -17,8 +20,8 @@ import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuRequest;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuResponse;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuService;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuService.Interface;
-import com.chenshuo.muduo.rpc.RpcProto.MessageType;
-import com.chenshuo.muduo.rpc.RpcProto.RpcMessage;
+import com.chenshuo.muduo.protorpc.RpcProto.MessageType;
+import com.chenshuo.muduo.protorpc.RpcProto.RpcMessage;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;

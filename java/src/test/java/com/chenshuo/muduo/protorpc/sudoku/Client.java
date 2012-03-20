@@ -1,17 +1,17 @@
-package com.chenshuo.muduo.rpc.sudoku;
+package com.chenshuo.muduo.protorpc.sudoku;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import com.chenshuo.muduo.protorpc.NewChannelCallback;
+import com.chenshuo.muduo.protorpc.RpcChannel;
+import com.chenshuo.muduo.protorpc.RpcClient;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuRequest;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuResponse;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuService;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuService.BlockingInterface;
-import com.chenshuo.muduo.rpc.NewChannelCallback;
-import com.chenshuo.muduo.rpc.RpcChannel;
-import com.chenshuo.muduo.rpc.RpcClient;
 import com.google.protobuf.RpcCallback;
 
 public class Client {

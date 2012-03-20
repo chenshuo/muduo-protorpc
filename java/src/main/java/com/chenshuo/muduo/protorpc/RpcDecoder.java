@@ -1,4 +1,4 @@
-package com.chenshuo.muduo.rpc;
+package com.chenshuo.muduo.protorpc;
 
 import java.nio.charset.Charset;
 import java.util.zip.Adler32;
@@ -9,7 +9,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
 
-import com.chenshuo.muduo.rpc.RpcProto.RpcMessage;
+import com.chenshuo.muduo.protorpc.RpcProto.RpcMessage;
 
 @Sharable
 public class RpcDecoder extends OneToOneDecoder {

@@ -1,4 +1,4 @@
-package com.chenshuo.muduo.rpc;
+package com.chenshuo.muduo.protorpc;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,9 +8,9 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 
-import com.chenshuo.muduo.rpc.RpcProto.ErrorCode;
-import com.chenshuo.muduo.rpc.RpcProto.MessageType;
-import com.chenshuo.muduo.rpc.RpcProto.RpcMessage;
+import com.chenshuo.muduo.protorpc.RpcProto.ErrorCode;
+import com.chenshuo.muduo.protorpc.RpcProto.MessageType;
+import com.chenshuo.muduo.protorpc.RpcProto.RpcMessage;
 import com.google.protobuf.BlockingRpcChannel;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.MethodDescriptor;

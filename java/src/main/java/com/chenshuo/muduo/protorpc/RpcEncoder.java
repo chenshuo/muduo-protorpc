@@ -1,4 +1,4 @@
-package com.chenshuo.muduo.rpc;
+package com.chenshuo.muduo.protorpc;
 
 import java.util.zip.Adler32;
 
@@ -9,7 +9,7 @@ import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
-import com.chenshuo.muduo.rpc.RpcProto.RpcMessage;
+import com.chenshuo.muduo.protorpc.RpcProto.RpcMessage;
 import com.google.protobuf.CodedOutputStream;
 
 @Sharable

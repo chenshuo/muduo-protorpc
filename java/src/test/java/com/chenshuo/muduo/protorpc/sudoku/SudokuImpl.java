@@ -1,4 +1,4 @@
-package com.chenshuo.muduo.rpc.sudoku;
+package com.chenshuo.muduo.protorpc.sudoku;
 
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuRequest;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuResponse;
