@@ -57,10 +57,8 @@ class RpcClient : boost::noncopyable
   {
     resolver::ResolveRequest request;
     request.set_address(host);
-    resolver::ResolveResponse* response = new resolver::ResolveResponse;
 
-    stub_.Resolve(NULL, &request, response,
-        NewCallback(this, &RpcClient::resolved, response, host));
+    stub_.Resolve(request, boost::bind(&RpcClient::resolved, this, _1, host));
   }
 
   void resolved(resolver::ResolveResponse* resp, std::string host)
@@ -102,6 +100,7 @@ int main(int argc, char* argv[])
     RpcClient rpcClient(&loop, serverAddr);
     rpcClient.connect();
     loop.loop();
+    google::protobuf::ShutdownProtobufLibrary();
   }
   else
   {

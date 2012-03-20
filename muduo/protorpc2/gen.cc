@@ -81,7 +81,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "static const ::google::protobuf::ServiceDescriptor* descriptor();\n"
     "\n");
 
-  GenerateMethodSignatures(VIRTUAL, printer);
+  GenerateMethodSignatures(NON_STUB, printer);
 
   printer->Print(
     "\n"
@@ -125,7 +125,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
     "// implements $classname$ ------------------------------------------\n"
     "\n");
 
-  GenerateMethodSignatures(NON_VIRTUAL, printer);
+  GenerateMethodSignatures(STUB, printer);
 
   printer->Outdent();
   printer->Print(vars_,
@@ -138,20 +138,28 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
 }
 
 void ServiceGenerator::GenerateMethodSignatures(
-    VirtualOrNon virtual_or_non, io::Printer* printer) {
+    StubOrNon stub_or_non, io::Printer* printer) {
   for (int i = 0; i < descriptor_->method_count(); i++) {
     const MethodDescriptor* method = descriptor_->method(i);
     map<string, string> sub_vars;
+    sub_vars["classname"] = descriptor_->name();
     sub_vars["name"] = method->name();
     sub_vars["input_type"] = ClassName(method->input_type(), true);
     sub_vars["output_type"] = ClassName(method->output_type(), true);
-    sub_vars["virtual"] = virtual_or_non == VIRTUAL ? "virtual " : "";
+    sub_vars["virtual"] = "virtual ";
 
-    printer->Print(sub_vars,
-      "$virtual$void $name$(::muduo::net::RpcController* controller,\n"
-      "                     const $input_type$* request,\n"
-      "                     $output_type$* response,\n"
-      "                     ::google::protobuf::Closure* done);\n");
+    if (stub_or_non == NON_STUB) {
+      printer->Print(sub_vars,
+        "$virtual$void $name$(::muduo::net::RpcController* controller,\n"
+        "                     const $input_type$* request,\n"
+        "                     $output_type$* response,\n"
+        "                     ::google::protobuf::Closure* done);\n");
+    } else {
+      printer->Print(sub_vars,
+        "using $classname$::$name$;\n"
+        "$virtual$void $name$(const $input_type$& request,\n"
+        "                     const ::boost::function1<void, $output_type$*>& done);\n");
+    }
   }
 }
 
@@ -194,13 +202,13 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
   printer->Print(vars_,
     "$classname$_Stub::$classname$_Stub(::muduo::net::RpcChannel* channel__)\n"
     "  : channel_(channel__), owns_channel_(false) {}\n"
-//     "$classname$_Stub::$classname$_Stub(\n"
-//     "    ::google::protobuf::RpcChannel* channel__,\n"
-//     "    ::google::protobuf::Service::ChannelOwnership ownership)\n"
-//     "  : channel_(channel__),\n"
-//     "    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}\n"
+//  "$classname$_Stub::$classname$_Stub(\n"
+//  "    ::google::protobuf::RpcChannel* channel__,\n"
+//  "    ::google::protobuf::Service::ChannelOwnership ownership)\n"
+//  "  : channel_(channel__),\n"
+//  "    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}\n"
     "$classname$_Stub::~$classname$_Stub() {\n"
-    "  if (owns_channel_) delete channel_;\n"
+//  "  if (owns_channel_) delete channel_;\n"
     "}\n"
     "\n");
 
@@ -317,12 +325,10 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
     sub_vars["output_type"] = ClassName(method->output_type(), true);
 
     printer->Print(sub_vars,
-      "void $classname$_Stub::$name$(::muduo::net::RpcController* controller,\n"
-      "                              const $input_type$* request,\n"
-      "                              $output_type$* response,\n"
-      "                              ::google::protobuf::Closure* done) {\n"
+      "void $classname$_Stub::$name$(const $input_type$& request,\n"
+      "                              const ::boost::function1<void, $output_type$*>& done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
-      "                       controller, request, response, done);\n"
+      "                       request, &$output_type$::default_instance(), done);\n"
       "}\n");
   }
 }

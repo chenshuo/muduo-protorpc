@@ -76,6 +76,7 @@ class ServiceGenerator {
  private:
   enum RequestOrResponse { REQUEST, RESPONSE };
   enum VirtualOrNon { VIRTUAL, NON_VIRTUAL };
+  enum StubOrNon { STUB, NON_STUB };
 
   // Header stuff.
 
@@ -86,7 +87,7 @@ class ServiceGenerator {
   void GenerateStubDefinition(io::Printer* printer);
 
   // Prints signatures for all methods in the
-  void GenerateMethodSignatures(VirtualOrNon virtual_or_non,
+  void GenerateMethodSignatures(StubOrNon stub_or_non,
                                 io::Printer* printer);
 
   // Source file stuff.

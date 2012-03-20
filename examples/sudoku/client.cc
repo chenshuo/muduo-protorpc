@@ -43,9 +43,8 @@ class RpcClient : boost::noncopyable
       channel_->setConnection(conn);
       sudoku::SudokuRequest request;
       request.set_checkerboard("001010");
-      sudoku::SudokuResponse* response = new sudoku::SudokuResponse;
 
-      stub_.Solve(NULL, &request, response, NewCallback(this, &RpcClient::solved, response));
+      stub_.Solve(request, bind(&RpcClient::solved, this, _1));
     }
   }
 
@@ -72,6 +71,7 @@ int main(int argc, char* argv[])
     RpcClient rpcClient(&loop, serverAddr);
     rpcClient.connect();
     loop.loop();
+    google::protobuf::ShutdownProtobufLibrary();
   }
   else
   {

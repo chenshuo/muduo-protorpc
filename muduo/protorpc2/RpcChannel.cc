@@ -44,10 +44,9 @@ RpcChannel::~RpcChannel()
   // need not be of any specific class as long as their descriptors are
   // method->input_type() and method->output_type().
 void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                  RpcController* controller,
-                  const ::google::protobuf::Message* request,
-                  ::google::protobuf::Message* response,
-                  ::google::protobuf::Closure* done)
+                  const ::google::protobuf::Message& request,
+                  const ::google::protobuf::Message* response,
+                  const ClientDoneCallback& done)
 {
   RpcMessage message;
   message.set_type(REQUEST);
@@ -55,7 +54,7 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   message.set_id(id);
   message.set_service(method->service()->full_name());
   message.set_method(method->name());
-  message.set_request(request->SerializeAsString()); // FIXME: error check
+  message.set_request(request.SerializeAsString()); // FIXME: error check
   RpcCodec::send(conn_, message);
 
   OutstandingCall out = { response, done };
@@ -95,12 +94,12 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 
     if (out.response)
     {
-      out.response->ParseFromString(message.response());
+      ::google::protobuf::MessagePtr response(out.response->New());
+      response->ParseFromString(message.response());
       if (out.done)
       {
-        out.done->Run();
+        out.done(get_pointer(response));
       }
-      delete out.response;
     }
   }
   else if (message.type() == REQUEST)
@@ -118,13 +117,12 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
           = desc->FindMethodByName(message.method());
         if (method)
         {
-          google::protobuf::Message* request = service->GetRequestPrototype(method).New();
+          google::protobuf::MessagePtr request(service->GetRequestPrototype(method).New());
           request->ParseFromString(message.request());
           google::protobuf::Message* response = service->GetResponsePrototype(method).New();
           int64_t id = message.id();
-          service->CallMethod(method, NULL, request, response,
+          service->CallMethod(method, NULL, get_pointer(request), response,
               NewCallback(this, &RpcChannel::doneCallback, response, id));
-          delete request;
         }
         else
         {

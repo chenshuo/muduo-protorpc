@@ -15,6 +15,9 @@
 #include <muduo/base/Mutex.h>
 #include <muduo/net/protorpc/RpcCodec.h>
 
+#include <google/protobuf/stubs/common.h>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <map>
@@ -107,16 +110,33 @@ class RpcChannel : boost::noncopyable
     services_ = services;
   }
 
+  typedef ::boost::function1<void, ::google::protobuf::Message*> ClientDoneCallback;
+
   // Call the given method of the remote service.  The signature of this
   // procedure looks the same as Service::CallMethod(), but the requirements
   // are less strict in one important way:  the request and response objects
   // need not be of any specific class as long as their descriptors are
   // method->input_type() and method->output_type().
   void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                  RpcController* controller,
-                  const ::google::protobuf::Message* request,
-                  ::google::protobuf::Message* response,
-                  ::google::protobuf::Closure* done);
+                  const ::google::protobuf::Message& request,
+                  const ::google::protobuf::Message* response,
+                  const ClientDoneCallback& done);
+
+  template<typename Output>
+  static void castcall(const ::boost::function1<void, Output*>& done,
+                       ::google::protobuf::Message* output)
+  {
+    done(::google::protobuf::down_cast<Output*>(output));
+  }
+
+  template<typename Output>
+  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+                  const ::google::protobuf::Message& request,
+                  const Output* response,
+                  const ::boost::function1<void, Output*>& done)
+  {
+    CallMethod(method, request, response, boost::bind(&castcall<Output>, done, _1));
+  }
 
   void onMessage(const TcpConnectionPtr& conn,
                  Buffer* buf,
@@ -131,8 +151,8 @@ class RpcChannel : boost::noncopyable
 
   struct OutstandingCall
   {
-    ::google::protobuf::Message* response;
-    ::google::protobuf::Closure* done;
+    const ::google::protobuf::Message* response;
+    ClientDoneCallback done;
   };
 
   RpcCodec codec_;

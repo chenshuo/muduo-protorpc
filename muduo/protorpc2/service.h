@@ -12,6 +12,7 @@
 #define MUDUO_NET_PROTORPC_SERVICE_H
 
 #include <boost/noncopyable.hpp>
+#include <boost/function.hpp>
 #include <muduo/protorpc2/RpcChannel.h>
 
 // Service and RpcChannel classes are incorporated from
@@ -59,6 +60,7 @@ class Descriptor;            // descriptor.h
 class ServiceDescriptor;     // descriptor.h
 class MethodDescriptor;      // descriptor.h
 class Message;               // message.h
+typedef ::boost::shared_ptr<Message> MessagePtr;
 
 class Closure;
 
