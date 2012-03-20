@@ -50,7 +50,7 @@
                   </fileset>
                 </path>
                 <pathconvert pathsep=" " property="proto.files" refid="proto.path" />
-                <exec executable="protoc24" failonerror="true">
+                <exec executable="protoc" failonerror="true">
                   <arg value="--java_out=target/generated-sources"/>
                   <arg value="-I${project.basedir}/src" />
                   <arg line="${proto.files}"/>
