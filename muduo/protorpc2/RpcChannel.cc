@@ -20,6 +20,20 @@
 using namespace muduo;
 using namespace muduo::net;
 
+static int test_down_pointer_cast()
+{
+  ::boost::shared_ptr< ::google::protobuf::Message> msg(new RpcMessage);
+  ::boost::shared_ptr<RpcMessage> rpc(::google::protobuf::down_pointer_cast<RpcMessage>(msg));
+  assert(msg && rpc);
+  if (!rpc)
+  {
+    abort();
+  }
+  return 0;
+}
+
+static int dummy = test_down_pointer_cast();
+
 RpcChannel::RpcChannel()
   : codec_(boost::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3))
 {
@@ -44,10 +58,11 @@ RpcChannel::~RpcChannel()
   // need not be of any specific class as long as their descriptors are
   // method->input_type() and method->output_type().
 void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                  const ::google::protobuf::Message& request,
-                  const ::google::protobuf::Message* response,
-                  const ClientDoneCallback& done)
+                            const ::google::protobuf::Message& request,
+                            const ::google::protobuf::Message* response,
+                            const ClientDoneCallback& done)
 {
+  // FIXME: can we move serialization to IO thread?
   RpcMessage message;
   message.set_type(REQUEST);
   int64_t id = id_.incrementAndGet();
@@ -94,6 +109,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 
     if (out.response)
     {
+      // FIXME: can we move deserialization to other thread?
       ::google::protobuf::MessagePtr response(out.response->New());
       response->ParseFromString(message.response());
       if (out.done)
@@ -104,30 +120,34 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   }
   else if (message.type() == REQUEST)
   {
-    // FIXME: extract to a function
-    if (services_)
+    callServiceMethod(message);
+  }
+  else if (message.type() == ERROR)
+  {
+    // FIXME:
+  }
+}
+
+void RpcChannel::callServiceMethod(const RpcMessage& message)
+{
+  if (services_)
+  {
+    std::map<std::string, Service*>::const_iterator it = services_->find(message.service());
+    if (it != services_->end())
     {
-      std::map<std::string, Service*>::const_iterator it = services_->find(message.service());
-      if (it != services_->end())
-      {
-        Service* service = it->second;
-        assert(service != NULL);
-        const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-        const google::protobuf::MethodDescriptor* method
+      Service* service = it->second;
+      assert(service != NULL);
+      const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+      const google::protobuf::MethodDescriptor* method
           = desc->FindMethodByName(message.method());
-        if (method)
-        {
-          google::protobuf::MessagePtr request(service->GetRequestPrototype(method).New());
-          request->ParseFromString(message.request());
-          google::protobuf::Message* response = service->GetResponsePrototype(method).New();
-          int64_t id = message.id();
-          service->CallMethod(method, NULL, get_pointer(request), response,
-              NewCallback(this, &RpcChannel::doneCallback, response, id));
-        }
-        else
-        {
-          // FIXME:
-        }
+      if (method)
+      {
+        // FIXME: can we move deserialization to other thread?
+        ::google::protobuf::MessagePtr request(service->GetRequestPrototype(method).New());
+        request->ParseFromString(message.request());
+        int64_t id = message.id();
+        service->CallMethod(method, get_pointer(request), &service->GetResponsePrototype(method),
+            boost::bind(&RpcChannel::doneCallback, this, _1, id));
       }
       else
       {
@@ -139,18 +159,19 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       // FIXME:
     }
   }
-  else if (message.type() == ERROR)
+  else
   {
+    // FIXME:
   }
 }
 
 void RpcChannel::doneCallback(::google::protobuf::Message* response, int64_t id)
 {
+  // FIXME: can we move serialization to IO thread?
   RpcMessage message;
   message.set_type(RESPONSE);
   message.set_id(id);
   message.set_response(response->SerializeAsString()); // FIXME: error check
   RpcCodec::send(conn_, message);
-  delete response;
 }
 

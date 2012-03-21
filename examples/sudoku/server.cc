@@ -13,15 +13,15 @@ namespace sudoku
 class SudokuServiceImpl : public SudokuService
 {
  public:
-  virtual void Solve(::muduo::net::RpcController* controller,
-                       const ::sudoku::SudokuRequest* request,
-                       ::sudoku::SudokuResponse* response,
-                       ::google::protobuf::Closure* done)
+  virtual void Solve(const ::sudoku::SudokuRequest* request,
+                     const ::sudoku::SudokuResponse* responsePrototype,
+                     const DoneCallback& done)
   {
     LOG_INFO << "SudokuServiceImpl::Solve";
-    response->set_solved(true);
-    response->set_checkerboard("1234567");
-    done->Run();
+    SudokuResponse response;
+    response.set_solved(true);
+    response.set_checkerboard("1234567");
+    done(&response);
   }
 };
 

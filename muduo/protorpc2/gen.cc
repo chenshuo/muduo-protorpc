@@ -89,10 +89,9 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "\n"
     "const ::google::protobuf::ServiceDescriptor* GetDescriptor();\n"
     "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                ::muduo::net::RpcController* controller,\n"
     "                const ::google::protobuf::Message* request,\n"
-    "                ::google::protobuf::Message* response,\n"
-    "                ::google::protobuf::Closure* done);\n"
+    "                const ::google::protobuf::Message* responsePrototype,\n"
+    "                const DoneCallback& done);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
     "const ::google::protobuf::Message& GetResponsePrototype(\n"
@@ -150,10 +149,9 @@ void ServiceGenerator::GenerateMethodSignatures(
 
     if (stub_or_non == NON_STUB) {
       printer->Print(sub_vars,
-        "$virtual$void $name$(::muduo::net::RpcController* controller,\n"
-        "                     const $input_type$* request,\n"
-        "                     $output_type$* response,\n"
-        "                     ::google::protobuf::Closure* done);\n");
+        "$virtual$void $name$(const $input_type$* request,\n"
+        "                     const $output_type$* responsePrototype,\n"
+        "                     const DoneCallback& done);\n");
     } else {
       printer->Print(sub_vars,
         "using $classname$::$name$;\n"
@@ -208,7 +206,6 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
 //  "  : channel_(channel__),\n"
 //  "    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}\n"
     "$classname$_Stub::~$classname$_Stub() {\n"
-//  "  if (owns_channel_) delete channel_;\n"
     "}\n"
     "\n");
 
@@ -226,13 +223,12 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
     sub_vars["output_type"] = ClassName(method->output_type(), true);
 
     printer->Print(sub_vars,
-      "void $classname$::$name$(::muduo::net::RpcController* controller,\n"
-      "                         const $input_type$*,\n"
-      "                         $output_type$*,\n"
-      "                         ::google::protobuf::Closure* done) {\n"
+      "void $classname$::$name$(const $input_type$*,\n"
+      "                         const $output_type$*,\n"
+      "                         const DoneCallback& done) {\n"
    // "  controller->SetFailed(\"Method $name$() not implemented.\");\n"
       "  assert(0);\n"
-      "  done->Run();\n"
+      "  done(NULL);\n"
       "}\n"
       "\n");
   }
@@ -241,10 +237,9 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
 void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
   printer->Print(vars_,
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                             ::muduo::net::RpcController* controller,\n"
     "                             const ::google::protobuf::Message* request,\n"
-    "                             ::google::protobuf::Message* response,\n"
-    "                             ::google::protobuf::Closure* done) {\n"
+    "                             const ::google::protobuf::Message* responsePrototype,\n"
+    "                             const DoneCallback& done) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
     "  switch(method->index()) {\n");
 
@@ -260,9 +255,8 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     //   not references.
     printer->Print(sub_vars,
       "    case $index$:\n"
-      "      $name$(controller,\n"
-      "             ::google::protobuf::down_cast<const $input_type$*>(request),\n"
-      "             ::google::protobuf::down_cast< $output_type$*>(response),\n"
+      "      $name$(::google::protobuf::down_cast<const $input_type$*>(request),\n"
+      "             ::google::protobuf::down_cast<const $output_type$*>(responsePrototype),\n"
       "             done);\n"
       "      break;\n");
   }

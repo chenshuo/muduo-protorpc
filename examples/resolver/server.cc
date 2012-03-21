@@ -21,10 +21,9 @@ class ResolverServiceImpl : public ResolverService
   {
   }
 
-  virtual void Resolve(::muduo::net::RpcController* controller,
-                       const ::resolver::ResolveRequest* request,
-                       ::resolver::ResolveResponse* response,
-                       ::google::protobuf::Closure* done)
+  virtual void Resolve(const ::resolver::ResolveRequest* request,
+                       const ::resolver::ResolveResponse* responsePrototype,
+                       const DoneCallback& done)
   {
     LOG_INFO << "ResolverServiceImpl::Resolve " << request->address();
 
@@ -33,12 +32,12 @@ class ResolverServiceImpl : public ResolverService
                                                  this,
                                                  request->address(),
                                                  _1,
-                                                 response,
                                                  done));
     if (!succeed)
     {
-      response->set_resolved(false);
-      done->Run();
+      ResolveResponse response;
+      response.set_resolved(false);
+      done(&response);
     }
   }
 
@@ -46,23 +45,22 @@ class ResolverServiceImpl : public ResolverService
 
   void doneCallback(const std::string& host,
                     const muduo::net::InetAddress& address,
-                    ::resolver::ResolveResponse* response,
-                    ::google::protobuf::Closure* done)
-
+                    const DoneCallback& done)
   {
     LOG_INFO << "ResolverServiceImpl::doneCallback " << host;
     int32_t ip = address.getSockAddrInet().sin_addr.s_addr;
+    ResolveResponse response;
     if (ip)
     {
-      response->set_resolved(true);
-      response->add_ip(ip);
-      response->add_port(address.getSockAddrInet().sin_port);
+      response.set_resolved(true);
+      response.add_ip(ip);
+      response.add_port(address.getSockAddrInet().sin_port);
     }
     else
     {
-      response->set_resolved(false);
+      response.set_resolved(false);
     }
-    done->Run();
+    done(&response);
   }
 
   cdns::Resolver resolver_;
@@ -74,11 +72,13 @@ int main()
 {
   LOG_INFO << "pid = " << getpid();
   EventLoop loop;
+  // loop.runAfter(30, boost::bind(&EventLoop::quit, &loop));
   InetAddress listenAddr(2053);
   resolver::ResolverServiceImpl impl(&loop);
   RpcServer server(&loop, listenAddr);
   server.registerService(&impl);
   server.start();
   loop.loop();
+  google::protobuf::ShutdownProtobufLibrary();
 }
 

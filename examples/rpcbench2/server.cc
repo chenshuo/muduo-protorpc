@@ -13,14 +13,14 @@ namespace echo
 class EchoServiceImpl : public EchoService
 {
  public:
-  virtual void Echo(::muduo::net::RpcController* controller,
-                    const ::echo::EchoRequest* request,
-                    ::echo::EchoResponse* response,
-                    ::google::protobuf::Closure* done)
+  virtual void Echo(const ::echo::EchoRequest* request,
+                    const ::echo::EchoResponse* responsePrototype,
+                    const DoneCallback& done)
   {
     //LOG_INFO << "EchoServiceImpl::Solve";
-    response->set_payload(request->payload());
-    done->Run();
+    EchoResponse response;
+    response.set_payload(request->payload());
+    done(&response);
   }
 };
 

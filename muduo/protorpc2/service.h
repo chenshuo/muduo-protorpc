@@ -62,8 +62,6 @@ class MethodDescriptor;      // descriptor.h
 class Message;               // message.h
 typedef ::boost::shared_ptr<Message> MessagePtr;
 
-class Closure;
-
 }  // namespace protobuf
 }  // namespace google
 
@@ -88,6 +86,8 @@ class Service : boost::noncopyable
  public:
   Service() {}
   virtual ~Service() {}
+
+  typedef ::boost::function1<void, ::google::protobuf::Message*> DoneCallback;
 
   // Get the ServiceDescriptor describing this service and its methods.
   virtual const ::google::protobuf::ServiceDescriptor* GetDescriptor() = 0;
@@ -118,10 +118,9 @@ class Service : boost::noncopyable
   //   RpcController can be queried to determine if an error occurred and
   //   possibly to get more information about the error.
   virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                          RpcController* controller,
                           const ::google::protobuf::Message* request,
-                          ::google::protobuf::Message* response,
-                          ::google::protobuf::Closure* done) = 0;
+                          const ::google::protobuf::Message* response,
+                          const DoneCallback& done) = 0;
 
   // CallMethod() requires that the request and response passed in are of a
   // particular subclass of Message.  GetRequestPrototype() and
