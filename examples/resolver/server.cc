@@ -21,7 +21,7 @@ class ResolverServiceImpl : public ResolverService
   {
   }
 
-  virtual void Resolve(const ::resolver::ResolveRequest* request,
+  virtual void Resolve(const boost::shared_ptr<const ResolveRequest>& request,
                        const ::resolver::ResolveResponse* responsePrototype,
                        const DoneCallback& done)
   {

@@ -67,6 +67,7 @@ class Descriptor;            // descriptor.h
 class ServiceDescriptor;     // descriptor.h
 class MethodDescriptor;      // descriptor.h
 class Message;               // message.h
+typedef ::boost::shared_ptr<Message> MessagePtr;
 
 // When you upcast (that is, cast a pointer from type Foo to type
 // SuperclassOfFoo), it's fine to use implicit_cast<>, since upcasts
@@ -94,7 +95,7 @@ inline ::boost::shared_ptr<To> down_pointer_cast(const ::boost::shared_ptr<From>
   // optimized build at run-time, as it will be optimized away
   // completely.
   if (false) {
-    implicit_cast<From*, To*>(0);
+    implicit_cast<const From*, To*>(0);
   }
 
 #if !defined(NDEBUG) && !defined(GOOGLE_PROTOBUF_NO_RTTI)
@@ -143,7 +144,7 @@ class RpcChannel : boost::noncopyable
     services_ = services;
   }
 
-  typedef ::boost::function1<void, ::google::protobuf::Message*> ClientDoneCallback;
+  typedef ::boost::function1<void, const ::google::protobuf::MessagePtr&> ClientDoneCallback;
 
   // Call the given method of the remote service.  The signature of this
   // procedure looks the same as Service::CallMethod(), but the requirements
@@ -156,19 +157,19 @@ class RpcChannel : boost::noncopyable
                   const ClientDoneCallback& done);
 
   template<typename Output>
-  static void castcall(const ::boost::function1<void, Output*>& done,
-                       ::google::protobuf::Message* output)
+  static void downcastcall(const ::boost::function1<void, const boost::shared_ptr<Output>&>& done,
+                           const ::google::protobuf::MessagePtr& output)
   {
-    done(::google::protobuf::down_cast<Output*>(output));
+    done(::google::protobuf::down_pointer_cast<Output>(output));
   }
 
   template<typename Output>
   void CallMethod(const ::google::protobuf::MethodDescriptor* method,
                   const ::google::protobuf::Message& request,
                   const Output* response,
-                  const ::boost::function1<void, Output*>& done)
+                  const ::boost::function1<void, const boost::shared_ptr<Output>&>& done)
   {
-    CallMethod(method, request, response, boost::bind(&castcall<Output>, done, _1));
+    CallMethod(method, request, response, boost::bind(&downcastcall<Output>, done, _1));
   }
 
   void onMessage(const TcpConnectionPtr& conn,
@@ -181,7 +182,7 @@ class RpcChannel : boost::noncopyable
                     Timestamp receiveTime);
 
   void callServiceMethod(const RpcMessage& message);
-  void doneCallback(::google::protobuf::Message* response, int64_t id);
+  void doneCallback(const ::google::protobuf::Message* response, int64_t id);
 
   struct OutstandingCall
   {

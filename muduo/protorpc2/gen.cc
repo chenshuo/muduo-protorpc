@@ -89,7 +89,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "\n"
     "const ::google::protobuf::ServiceDescriptor* GetDescriptor();\n"
     "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                const ::google::protobuf::Message* request,\n"
+    "                const ::google::protobuf::MessagePtr& request,\n"
     "                const ::google::protobuf::Message* responsePrototype,\n"
     "                const DoneCallback& done);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
@@ -149,14 +149,15 @@ void ServiceGenerator::GenerateMethodSignatures(
 
     if (stub_or_non == NON_STUB) {
       printer->Print(sub_vars,
-        "$virtual$void $name$(const $input_type$* request,\n"
+        "$virtual$void $name$(const ::boost::shared_ptr<const $input_type$>& request,\n"
         "                     const $output_type$* responsePrototype,\n"
         "                     const DoneCallback& done);\n");
     } else {
       printer->Print(sub_vars,
         "using $classname$::$name$;\n"
         "$virtual$void $name$(const $input_type$& request,\n"
-        "                     const ::boost::function1<void, $output_type$*>& done);\n");
+        "                     const ::boost::function1<void,\n"
+        "                           const ::boost::shared_ptr< $output_type$>&>& done);\n");
     }
   }
 }
@@ -223,7 +224,7 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
     sub_vars["output_type"] = ClassName(method->output_type(), true);
 
     printer->Print(sub_vars,
-      "void $classname$::$name$(const $input_type$*,\n"
+      "void $classname$::$name$(const ::boost::shared_ptr<const $input_type$>&,\n"
       "                         const $output_type$*,\n"
       "                         const DoneCallback& done) {\n"
    // "  controller->SetFailed(\"Method $name$() not implemented.\");\n"
@@ -237,7 +238,7 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
 void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
   printer->Print(vars_,
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                             const ::google::protobuf::Message* request,\n"
+    "                             const ::google::protobuf::MessagePtr& request,\n"
     "                             const ::google::protobuf::Message* responsePrototype,\n"
     "                             const DoneCallback& done) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
@@ -255,7 +256,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     //   not references.
     printer->Print(sub_vars,
       "    case $index$:\n"
-      "      $name$(::google::protobuf::down_cast<const $input_type$*>(request),\n"
+      "      $name$(::google::protobuf::down_pointer_cast<const $input_type$>(request),\n"
       "             ::google::protobuf::down_cast<const $output_type$*>(responsePrototype),\n"
       "             done);\n"
       "      break;\n");
@@ -320,7 +321,8 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
 
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
-      "                              const ::boost::function1<void, $output_type$*>& done) {\n"
+      "                              const ::boost::function1<void,\n"
+      "                                    const ::boost::shared_ptr< $output_type$>&>& done) {"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       request, &$output_type$::default_instance(), done);\n"
       "}\n");

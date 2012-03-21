@@ -114,7 +114,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       response->ParseFromString(message.response());
       if (out.done)
       {
-        out.done(get_pointer(response));
+        out.done(response);
       }
     }
   }
@@ -146,7 +146,7 @@ void RpcChannel::callServiceMethod(const RpcMessage& message)
         ::google::protobuf::MessagePtr request(service->GetRequestPrototype(method).New());
         request->ParseFromString(message.request());
         int64_t id = message.id();
-        service->CallMethod(method, get_pointer(request), &service->GetResponsePrototype(method),
+        service->CallMethod(method, request, &service->GetResponsePrototype(method),
             boost::bind(&RpcChannel::doneCallback, this, _1, id));
       }
       else
@@ -165,7 +165,7 @@ void RpcChannel::callServiceMethod(const RpcMessage& message)
   }
 }
 
-void RpcChannel::doneCallback(::google::protobuf::Message* response, int64_t id)
+void RpcChannel::doneCallback(const ::google::protobuf::Message* response, int64_t id)
 {
   // FIXME: can we move serialization to IO thread?
   RpcMessage message;
