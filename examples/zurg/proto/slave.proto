@@ -1,0 +1,23 @@
+package zurg;
+
+option cc_generic_services = true;
+option java_generic_services = true;
+option py_generic_services = true;
+option java_package = "com.chenshuo.muduo.zurg.proto";
+option java_outer_classname = "SlaveProto";
+
+message GetFileContentRequest {
+  required string file_name = 1;
+  optional int32 max_size = 2 [default = 1048576];
+}
+
+message GetFileContentResponse {
+  required int32 error_num = 1;
+  optional string content = 2;
+  optional int64 file_size = 3;
+}
+
+service SlaveService {
+  rpc getFileContent (GetFileContentRequest) returns (GetFileContentResponse);
+}
+

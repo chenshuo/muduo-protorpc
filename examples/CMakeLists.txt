@@ -31,3 +31,5 @@ if(muduo_cdns)
 else()
   add_subdirectory(resolver EXCLUDE_FROM_ALL)  # async response
 endif()
+
+add_subdirectory(zurg)

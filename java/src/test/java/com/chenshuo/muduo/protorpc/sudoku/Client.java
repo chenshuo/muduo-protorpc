@@ -11,7 +11,6 @@ import com.chenshuo.muduo.protorpc.sudoku.SudokuProto;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuRequest;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuResponse;
 import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuService;
-import com.chenshuo.muduo.protorpc.sudoku.SudokuProto.SudokuService.BlockingInterface;
 import com.google.protobuf.RpcCallback;
 
 public class Client {
@@ -20,7 +19,7 @@ public class Client {
         RpcClient client = new RpcClient();
         RpcChannel channel = client.blockingConnect(addr);
         //sendRequest(channel, client);
-        BlockingInterface remoteService = SudokuProto.SudokuService.newBlockingStub(channel);
+        SudokuService.BlockingInterface remoteService = SudokuProto.SudokuService.newBlockingStub(channel);
         SudokuRequest request = SudokuRequest.newBuilder().setCheckerboard("001010").build();
         SudokuResponse response = remoteService.solve(null, request);
         System.out.println(response);

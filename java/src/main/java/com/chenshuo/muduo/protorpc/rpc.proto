@@ -1,4 +1,4 @@
-package muduo;
+package muduo.net;
 option java_package = "com.chenshuo.muduo.protorpc";
 option java_outer_classname = "RpcProto";
 

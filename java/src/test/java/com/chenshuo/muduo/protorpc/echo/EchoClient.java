@@ -15,7 +15,6 @@ import com.chenshuo.muduo.protorpc.echo.EchoProto;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoRequest;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoResponse;
 import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoService;
-import com.chenshuo.muduo.protorpc.echo.EchoProto.EchoService.BlockingInterface;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.ServiceException;
 
@@ -37,7 +36,7 @@ public class EchoClient {
             System.out.println(Thread.currentThread());
             RpcClient client = new RpcClient(channelFactory);
             RpcChannel channel = client.blockingConnect(serverAddr);
-            BlockingInterface remoteService = EchoService.newBlockingStub(channel);
+            EchoService.BlockingInterface remoteService = EchoService.newBlockingStub(channel);
             String payload = new String(new byte[100]);
             payload = "Hello";
             EchoRequest request = EchoRequest.newBuilder().setPayload(payload).build();
