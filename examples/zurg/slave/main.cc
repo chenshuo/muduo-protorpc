@@ -1,5 +1,6 @@
 #include <examples/zurg/slave/SlaveApp.h>
 
+#include <examples/zurg/common/ProtobufLog.h>
 #include <examples/zurg/slave/SlaveConfig.h>
 
 #include <muduo/base/ProcessInfo.h>
@@ -56,6 +57,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
+  google::protobuf::SetLogHandler(zurgLogHandler);
   SlaveConfig config(parseCommandLine(argc, argv));
   if (config.succeed_)
   {
