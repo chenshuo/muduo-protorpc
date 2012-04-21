@@ -109,7 +109,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                const ::google::protobuf::MessagePtr& request,\n"
     "                const ::google::protobuf::Message* responsePrototype,\n"
-    "                const DoneCallback& done);\n"
+    "                const ::muduo::net::RpcDoneCallback& done);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
     "const ::google::protobuf::Message& GetResponsePrototype(\n"
@@ -171,7 +171,7 @@ void ServiceGenerator::GenerateMethodSignatures(
       printer->Print(sub_vars,
         "$virtual$void $name$(const $input_type$Ptr& request,\n"
         "                     const $output_type$* responsePrototype,\n"
-        "                     const DoneCallback& done);\n");
+        "                     const ::muduo::net::RpcDoneCallback& done);\n");
     } else {
       printer->Print(sub_vars,
         "using $classname$::$name$;\n"
@@ -248,7 +248,7 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
     printer->Print(sub_vars,
       "void $classname$::$name$(const $input_type$Ptr&,\n"
       "                         const $output_type$*,\n"
-      "                         const DoneCallback& done) {\n"
+      "                         const ::muduo::net::RpcDoneCallback& done) {\n"
    // "  controller->SetFailed(\"Method $name$() not implemented.\");\n"
       "  assert(0);\n"
       "  done(NULL);\n"
@@ -263,7 +263,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                             const ::google::protobuf::MessagePtr& request,\n"
     "                             const ::google::protobuf::Message* responsePrototype,\n"
-    "                             const DoneCallback& done) {\n"
+    "                             const ::muduo::net::RpcDoneCallback& done) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
     "  switch(method->index()) {\n");
 

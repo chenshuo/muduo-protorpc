@@ -23,7 +23,7 @@ class ResolverServiceImpl : public ResolverService
 
   virtual void Resolve(const ::resolver::ResolveRequestPtr& request,
                        const ::resolver::ResolveResponse* responsePrototype,
-                       const DoneCallback& done)
+                       const RpcDoneCallback& done)
   {
     LOG_INFO << "ResolverServiceImpl::Resolve " << request->address();
 
@@ -45,7 +45,7 @@ class ResolverServiceImpl : public ResolverService
 
   void doneCallback(const std::string& host,
                     const muduo::net::InetAddress& address,
-                    const DoneCallback& done)
+                    const RpcDoneCallback& done)
   {
     LOG_INFO << "ResolverServiceImpl::doneCallback " << host;
     int32_t ip = address.getSockAddrInet().sin_addr.s_addr;

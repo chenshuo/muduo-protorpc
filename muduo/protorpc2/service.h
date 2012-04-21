@@ -76,6 +76,7 @@ class RpcChannel;
 // Defined in this file.
 class Service;
 class RpcController;
+typedef ::boost::function1<void, const ::google::protobuf::Message*> RpcDoneCallback;
 
 // Abstract base interface for protocol-buffer-based RPC services.  Services
 // themselves are abstract interfaces (implemented either by servers or as
@@ -88,7 +89,7 @@ class Service : boost::noncopyable
   Service() {}
   virtual ~Service() {}
 
-  typedef ::boost::function1<void, const ::google::protobuf::Message*> DoneCallback;
+  typedef ::muduo::net::RpcDoneCallback RpcDoneCallback;
 
   // Get the ServiceDescriptor describing this service and its methods.
   virtual const ::google::protobuf::ServiceDescriptor* GetDescriptor() = 0;
@@ -121,7 +122,7 @@ class Service : boost::noncopyable
   virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
                           const ::google::protobuf::MessagePtr& request,
                           const ::google::protobuf::Message* response,
-                          const DoneCallback& done) = 0;
+                          const RpcDoneCallback& done) = 0;
 
   // CallMethod() requires that the request and response passed in are of a
   // particular subclass of Message.  GetRequestPrototype() and
