@@ -3,27 +3,41 @@
 
 #include <examples/zurg/proto/slave.pb.h>
 
-#include <muduo/protorpc2/RpcServer.h>
-
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
+
+namespace muduo
+{
+namespace net
+{
+class EventLoop;
+}
+}
 
 namespace zurg
 {
 
+class ChildManager;
+
 class SlaveServiceImpl : public SlaveService
 {
  public:
-  explicit SlaveServiceImpl(muduo::net::EventLoop* loop)
-    : loop_(loop)
-  {
-  }
+  explicit SlaveServiceImpl(muduo::net::EventLoop* loop);
+  ~SlaveServiceImpl();
 
-  virtual void getFileContent(const boost::shared_ptr<const ::zurg::GetFileContentRequest>& request,
-                              const ::zurg::GetFileContentResponse* responsePrototype,
-                              const DoneCallback& done);
+  void start();
+
+  virtual void getFileContent(const GetFileContentRequestPtr& request,
+                              const GetFileContentResponse* responsePrototype,
+                              const RpcDoneCallback& done);
+
+  virtual void runCommand(const RunCommandRequestPtr& request,
+                          const RunCommandResponse* responsePrototype,
+                          const RpcDoneCallback& done);
 
  private:
   muduo::net::EventLoop* loop_;
+  boost::scoped_ptr<ChildManager> children_;
 };
 
 }

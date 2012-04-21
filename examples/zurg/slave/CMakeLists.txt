@@ -1,5 +1,7 @@
 
 add_executable(zurg_slave main.cc
+  ChildManager.cc
+  Process.cc
   SlaveApp.cc
   SlaveService.cc)
 

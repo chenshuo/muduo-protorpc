@@ -3,6 +3,8 @@
 #include <examples/zurg/slave/SlaveConfig.h>
 #include <examples/zurg/slave/SlaveService.h>
 
+#include <muduo/protorpc2/RpcServer.h>
+
 #include <muduo/base/Logging.h>
 
 #include <assert.h>
@@ -22,7 +24,6 @@ SlaveApp::SlaveApp(const SlaveConfig& config)
     InetAddress listenAddress(static_cast<uint16_t>(config.listenPort_));
     server_.reset(new RpcServer(&loop_, listenAddress));
     server_->registerService(get_pointer(service_));
-    server_->start();
     LOG_INFO << "Listen on port " << listenAddress.toIpPort();
   }
 
@@ -35,5 +36,10 @@ SlaveApp::~SlaveApp()
 
 void SlaveApp::run()
 {
+  service_->start();
+  if (server_)
+  {
+    server_->start();
+  }
   loop_.loop();
 }

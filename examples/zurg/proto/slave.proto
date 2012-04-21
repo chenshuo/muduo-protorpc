@@ -12,12 +12,37 @@ message GetFileContentRequest {
 }
 
 message GetFileContentResponse {
-  required int32 error_num = 1;
-  optional string content = 2;
+  required int32 error_code = 1;
+  optional bytes content = 2;
   optional int64 file_size = 3;
+}
+
+message RunCommandRequest {
+  required string command = 1;
+  optional string cwd = 2 [default = "/tmp"];
+  repeated string args = 3;
+  repeated string envs = 4;
+  optional bool envs_only = 5 [default = false];
+  optional int32 max_stdout = 6 [default = 1048576];
+  optional int32 max_stderr = 7 [default = 1048576];
+  optional int32 timeout = 8 [default = 60];
+}
+
+message RunCommandResponse {
+  required int32 error_code = 1;
+  optional int32 pid = 2;
+  optional int32 status = 3;
+  optional bytes std_output = 4;
+  optional bytes std_error = 5;
+  optional float real_time = 6;
+  optional float user_time = 7;
+  optional float system_time = 8;
+  optional int64 memory_maxrss_kb = 9;
+  // optional int64 ctxsw = 10;
 }
 
 service SlaveService {
   rpc getFileContent (GetFileContentRequest) returns (GetFileContentResponse);
+  rpc runCommand (RunCommandRequest) returns (RunCommandResponse);
 }
 

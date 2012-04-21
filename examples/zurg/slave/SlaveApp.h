@@ -2,9 +2,17 @@
 #define MUDUO_PROTORPC_ZURG_SLAVEAPP_H
 
 #include <muduo/net/EventLoop.h>
-#include <muduo/protorpc2/RpcServer.h>
 
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
+
+namespace muduo
+{
+namespace net
+{
+class RpcServer;
+}
+}
 
 namespace zurg
 {
@@ -23,6 +31,8 @@ class SlaveApp : boost::noncopyable
  private:
   muduo::net::EventLoop loop_;
   boost::scoped_ptr<SlaveServiceImpl> service_;
+
+  // optional
   boost::scoped_ptr<muduo::net::RpcServer> server_;
 };
 
