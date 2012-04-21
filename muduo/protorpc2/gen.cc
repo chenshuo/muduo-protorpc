@@ -43,6 +43,8 @@
 
 #include <stdio.h>
 
+const bool kTrace = false;
+
 namespace google {
 namespace protobuf {
 
@@ -54,18 +56,34 @@ namespace cpp {
 string ClassName(const Descriptor* descriptor, bool qualified);
 
 void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
-  fprintf(stderr, "GenerateDeclarations\n");
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   // Forward-declare the stub type.
   printer->Print(vars_,
     "class $classname$_Stub;\n"
     "\n");
 
+  map<string, string> types;
+
+  for (int i = 0; i < descriptor_->method_count(); i++) {
+    const MethodDescriptor* method = descriptor_->method(i);
+    types[ClassName(method->input_type(), true)] = ClassName(method->input_type(), false);
+    types[ClassName(method->output_type(), true)] = ClassName(method->output_type(), false);
+  }
+  for (map<string, string>::iterator it = types.begin();
+       it != types.end(); ++it) {
+    map<string, string> sub_vars;
+    sub_vars["type"] = it->first;
+    sub_vars["typedef"] = it->second;
+    printer->Print(sub_vars, "typedef ::boost::shared_ptr< $type$> $typedef$Ptr;\n");
+  }
   GenerateInterface(printer);
   GenerateStubDefinition(printer);
 }
 
 void ServiceGenerator::GenerateInterface(io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   printer->Print(vars_,
+    "\n"
     "class $dllexport$$classname$ : public ::muduo::net::Service {\n"
     " protected:\n"
     "  // This class should be treated as an abstract interface.\n"
@@ -107,6 +125,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
 }
 
 void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   printer->Print(vars_,
     "class $dllexport$$classname$_Stub : public $classname$ {\n"
     " public:\n");
@@ -138,6 +157,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
 
 void ServiceGenerator::GenerateMethodSignatures(
     StubOrNon stub_or_non, io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   for (int i = 0; i < descriptor_->method_count(); i++) {
     const MethodDescriptor* method = descriptor_->method(i);
     map<string, string> sub_vars;
@@ -149,15 +169,14 @@ void ServiceGenerator::GenerateMethodSignatures(
 
     if (stub_or_non == NON_STUB) {
       printer->Print(sub_vars,
-        "$virtual$void $name$(const ::boost::shared_ptr<const $input_type$>& request,\n"
+        "$virtual$void $name$(const $input_type$Ptr& request,\n"
         "                     const $output_type$* responsePrototype,\n"
         "                     const DoneCallback& done);\n");
     } else {
       printer->Print(sub_vars,
         "using $classname$::$name$;\n"
         "$virtual$void $name$(const $input_type$& request,\n"
-        "                     const ::boost::function1<void,\n"
-        "                           const ::boost::shared_ptr< $output_type$>&>& done);\n");
+        "                     const ::boost::function1<void, const $output_type$Ptr&>& done);\n");
     }
   }
 }
@@ -166,6 +185,7 @@ void ServiceGenerator::GenerateMethodSignatures(
 
 void ServiceGenerator::GenerateDescriptorInitializer(
     io::Printer* printer, int index) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   map<string, string> vars;
   vars["classname"] = descriptor_->name();
   vars["index"] = SimpleItoa(index);
@@ -177,6 +197,7 @@ void ServiceGenerator::GenerateDescriptorInitializer(
 // ===================================================================
 
 void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   printer->Print(vars_,
     "$classname$::~$classname$() {}\n"
     "\n"
@@ -214,6 +235,7 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
 }
 
 void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   for (int i = 0; i < descriptor_->method_count(); i++) {
     const MethodDescriptor* method = descriptor_->method(i);
     map<string, string> sub_vars;
@@ -224,7 +246,7 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
     sub_vars["output_type"] = ClassName(method->output_type(), true);
 
     printer->Print(sub_vars,
-      "void $classname$::$name$(const ::boost::shared_ptr<const $input_type$>&,\n"
+      "void $classname$::$name$(const $input_type$Ptr&,\n"
       "                         const $output_type$*,\n"
       "                         const DoneCallback& done) {\n"
    // "  controller->SetFailed(\"Method $name$() not implemented.\");\n"
@@ -236,6 +258,7 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
 }
 
 void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   printer->Print(vars_,
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                             const ::google::protobuf::MessagePtr& request,\n"
@@ -256,7 +279,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     //   not references.
     printer->Print(sub_vars,
       "    case $index$:\n"
-      "      $name$(::google::protobuf::down_pointer_cast<const $input_type$>(request),\n"
+      "      $name$(::google::protobuf::down_pointer_cast< $input_type$>(request),\n"
       "             ::google::protobuf::down_cast<const $output_type$*>(responsePrototype),\n"
       "             done);\n"
       "      break;\n");
@@ -273,6 +296,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
 
 void ServiceGenerator::GenerateGetPrototype(RequestOrResponse which,
                                             io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   if (which == REQUEST) {
     printer->Print(vars_,
       "const ::google::protobuf::Message& $classname$::GetRequestPrototype(\n");
@@ -310,6 +334,7 @@ void ServiceGenerator::GenerateGetPrototype(RequestOrResponse which,
 }
 
 void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
+  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   for (int i = 0; i < descriptor_->method_count(); i++) {
     const MethodDescriptor* method = descriptor_->method(i);
     map<string, string> sub_vars;
@@ -321,8 +346,7 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
 
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
-      "                              const ::boost::function1<void,\n"
-      "                                    const ::boost::shared_ptr< $output_type$>&>& done) {"
+      "                              const ::boost::function1<void, const $output_type$Ptr&>& done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       request, &$output_type$::default_instance(), done);\n"
       "}\n");

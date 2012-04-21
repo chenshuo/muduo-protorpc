@@ -13,7 +13,7 @@ namespace echo
 class EchoServiceImpl : public EchoService
 {
  public:
-  virtual void Echo(const boost::shared_ptr<const EchoRequest>& request,
+  virtual void Echo(const ::echo::EchoRequestPtr& request,
                     const ::echo::EchoResponse* responsePrototype,
                     const DoneCallback& done)
   {

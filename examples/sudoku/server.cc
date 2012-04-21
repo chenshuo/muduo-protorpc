@@ -13,7 +13,7 @@ namespace sudoku
 class SudokuServiceImpl : public SudokuService
 {
  public:
-  virtual void Solve(const boost::shared_ptr<const SudokuRequest>& request,
+  virtual void Solve(const ::sudoku::SudokuRequestPtr& request,
                      const ::sudoku::SudokuResponse* responsePrototype,
                      const DoneCallback& done)
   {
