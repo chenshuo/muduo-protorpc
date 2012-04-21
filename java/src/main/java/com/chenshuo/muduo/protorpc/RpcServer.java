@@ -29,4 +29,10 @@ public class RpcServer extends RpcPeer {
         RpcChannel rpcChannel = new RpcChannel(channel);
         setupNewChannel(rpcChannel);
     }
+
+    @Override
+    public void channelDisconnected(Channel channel) {
+        // TODO Auto-generated method stub
+
+    }
 }

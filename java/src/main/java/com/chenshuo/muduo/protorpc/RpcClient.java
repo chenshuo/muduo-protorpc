@@ -54,7 +54,7 @@ public class RpcClient extends RpcPeer {
         future.addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
-                //System.err.println("operationComplete");
+                // System.err.println("operationComplete");
             }
         });
         this.newChannelCallback = newChannelCallback;
@@ -70,6 +70,12 @@ public class RpcClient extends RpcPeer {
             rpcChannel = new RpcChannel(channel);
             setupNewChannel(rpcChannel);
         }
+    }
+
+    @Override
+    public void channelDisconnected(Channel channel) {
+        assert channel == rpcChannel.getChannel();
+        rpcChannel.disconnected();
     }
 
     public RpcChannel getChannel() {

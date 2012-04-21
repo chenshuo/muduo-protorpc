@@ -32,6 +32,12 @@ public class RpcMessageHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
+    public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        System.err.println("channelDisonnected");
+        rpcPeer.channelDisconnected(e.getChannel());
+    }
+
+    @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
         assert e.getChannel() == channel.getChannel();
         channel.messageReceived(ctx, e);

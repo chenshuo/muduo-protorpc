@@ -32,4 +32,6 @@ public abstract class RpcPeer {
     }
 
     public abstract void channelConnected(Channel channel);
+
+    public abstract void channelDisconnected(Channel channel);
 }

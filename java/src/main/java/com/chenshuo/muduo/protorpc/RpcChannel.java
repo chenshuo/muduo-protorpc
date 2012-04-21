@@ -175,7 +175,7 @@ public class RpcChannel implements com.google.protobuf.RpcChannel, BlockingRpcCh
         // channel.get
         // assert
         synchronized (done) {
-            while (done.response == null) {
+            while (done.response == null && channel.isConnected()) {
                 try {
                     done.wait();
                 } catch (InterruptedException e) {
@@ -183,5 +183,14 @@ public class RpcChannel implements com.google.protobuf.RpcChannel, BlockingRpcCh
             }
         }
         return done.response;
+    }
+
+    public void disconnected() {
+        // System.err.println(channel.isConnected());
+        for (Outstanding out : outstandings.values()) {
+            synchronized (out.done) {
+                out.done.notify();
+            }
+        }
     }
 }
