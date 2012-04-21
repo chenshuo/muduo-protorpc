@@ -49,6 +49,7 @@ ChildManager::~ChildManager()
 
 void ChildManager::start()
 {
+  loop_->runEvery(10.0, boost::bind(&ChildManager::onTimer, this));
   channel_.setReadCallback(boost::bind(&ChildManager::onRead, this, _1));
   channel_.enableReading();
 }
@@ -74,23 +75,52 @@ void ChildManager::onRead(muduo::Timestamp t)
               << " ssi_stime = " << siginfo.ssi_stime;
 
     pid_t pid = siginfo.ssi_pid;
-    LOG_INFO << "ChildManager::onRead - child process " << pid << " exited.";
+    LOG_INFO << "ChildManager::onRead - SIGCHLD of " << pid;
     int status = 0;
     struct rusage resourceUsage;
     bzero(&resourceUsage, sizeof(resourceUsage));
     pid_t result = ::wait4(pid, &status, WNOHANG, &resourceUsage);
-    assert(result == pid);
-    // LOG_DEBUG << "========== " << status << " " << siginfo.ssi_status;
-    std::map<pid_t, Callback>::iterator it = callbacks_.find(pid);
-    if (it != callbacks_.end())
+    if (result == pid)
     {
-      it->second(status, resourceUsage);
-      callbacks_.erase(it);
+      onExit(pid, status, resourceUsage);
+    }
+    else if (result < 0)
+    {
+      LOG_SYSERR << "ChildManager::onRead - wait4 ";
     }
   }
   else
   {
-    LOG_ERROR << "ChildManager::onRead - " << n;
+    LOG_SYSERR << "ChildManager::onRead - " << n;
   }
 }
 
+void ChildManager::onTimer()
+{
+  int status = 0;
+  struct rusage resourceUsage;
+  bzero(&resourceUsage, sizeof(resourceUsage));
+  pid_t pid = 0;
+  while ( (pid = ::wait4(-1, &status, WNOHANG, &resourceUsage)) > 0)
+  {
+    LOG_INFO << "ChildManager::onTimer - child process " << pid << " exited.";
+    onExit(pid, status, resourceUsage);
+  }
+}
+
+void ChildManager::onExit(pid_t pid, int status, const struct rusage& resourceUsage)
+{
+  std::map<pid_t, Callback>::iterator it = callbacks_.find(pid);
+  if (it != callbacks_.end())
+  {
+    // defer
+    loop_->queueInLoop(boost::bind(it->second, status, resourceUsage));
+    // it->second(status, resourceUsage);
+    callbacks_.erase(it);
+  }
+  else
+  {
+    // could be failed run commands.
+    // LOG_ERROR << "ChildManager::onExit - unknown pid " << pid;
+  }
+}

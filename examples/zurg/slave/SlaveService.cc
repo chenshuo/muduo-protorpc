@@ -52,7 +52,14 @@ void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
 {
   LOG_INFO << "SlaveServiceImpl::runCommand - " << request->command();
   ProcessPtr process(new Process(loop_, request, done));
-  int err = process->start();
+  int err = 12; // ENOMEM;
+  try
+  {
+    err = process->start();
+  }
+  catch (...)
+  {
+  }
   if (err)
   {
     RunCommandResponse response;
@@ -61,8 +68,8 @@ void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
   }
   else
   {
-    children_->runAtExit(process->pid(),
-                        boost::bind(&Process::onExit, process, _1, _2));
+    children_->runAtExit(process->pid(),  // bind strong ptr
+                         boost::bind(&Process::onExit, process, _1, _2));
     boost::weak_ptr<Process> weakProcessPtr(process);
     TimerId timerId = loop_->runAfter(request->timeout(),
                                       boost::bind(&Process::onTimeoutWeak, weakProcessPtr));

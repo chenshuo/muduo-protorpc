@@ -34,7 +34,10 @@ class ChildManager : boost::noncopyable
   void runAtExit(pid_t pid, const Callback&);
 
  private:
+
   void onRead(muduo::Timestamp t);
+  void onTimer();
+  void onExit(pid_t pid, int status, const struct rusage&);
 
   muduo::net::EventLoop* loop_;
   int signalFd_;

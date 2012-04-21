@@ -3,15 +3,18 @@
 
 #include <examples/zurg/proto/slave.pb.h>
 
+#include <muduo/net/Buffer.h>
 #include <muduo/net/TimerId.h>
 
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace muduo
 {
 namespace net
 {
+class Channel;
 class EventLoop;
 }
 }
@@ -20,6 +23,8 @@ struct rusage;
 
 namespace zurg
 {
+
+class Pipe;
 
 class Process : boost::noncopyable
 {
@@ -31,13 +36,14 @@ class Process : boost::noncopyable
       runCommandRequest(request),
       doneCallback(done),
       pid_(0),
-      timerId_(NULL, 0)
+      stdoutFd_(-1),
+      stderrFd_(-1)
   {
   }
 
   ~Process();
 
-  int start();
+  int start(); // may throw
 
   pid_t pid() const
   {
@@ -55,12 +61,26 @@ class Process : boost::noncopyable
   static void onTimeoutWeak(const boost::weak_ptr<Process>& wkPtr);
 
  private:
+  int afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError);
+
+  void onReadStdout(muduo::Timestamp t);
+  void onReadStderr(muduo::Timestamp t);
+  void onCloseStdout();
+  void onCloseStderr();
+
   muduo::net::EventLoop* loop_;
   RunCommandRequestPtr runCommandRequest;
   muduo::net::RpcDoneCallback doneCallback;
   pid_t pid_;
   muduo::Timestamp startTime_;
   muduo::net::TimerId timerId_;
+
+  int stdoutFd_;
+  int stderrFd_;
+  muduo::net::Buffer stdoutBuffer_;
+  muduo::net::Buffer stderrBuffer_;
+  boost::scoped_ptr<muduo::net::Channel> stdoutChannel_;
+  boost::scoped_ptr<muduo::net::Channel> stderrChannel_;
 };
 typedef boost::shared_ptr<Process> ProcessPtr;
 
