@@ -2,7 +2,6 @@ package com.chenshuo.muduo.zurg;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.Collections;
 
 import com.chenshuo.muduo.protorpc.RpcChannel;
 import com.chenshuo.muduo.protorpc.RpcClient;
@@ -47,18 +46,26 @@ public class SlaveClient {
         RunCommandRequest request = RunCommandRequest.newBuilder()
                 .setCommand(cmd)
                 .addAllArgs(Arrays.asList(args))
-                .setMaxStdout(65536)
+                .setMaxStdout(1048576)
+                .setMaxStderr(65536)
                 .setTimeout(5)
+                .setCwd(".")
                 .build();
         RunCommandResponse response = slaveService.runCommand(null, request);
-        System.out.println("err = " + response.getErrorCode());
+        System.out.println("\nerr = " + response.getErrorCode());
         if (response.getErrorCode() == 0) {
-            System.out.println(response.getPid());
-            System.out.println(response.getExitStatus());
-            System.out.println(response.getSignaled());
-            System.out.println(response.getStdOutput().size());
-            if (response.getStdOutput().size() < 8192) {
+            System.out.println("pid " + response.getPid());
+            System.out.println("seconds " + (response.getFinishTimeUs() - response.getStartTimeUs()) / 1000000.0);
+            System.out.println("exit " + response.getExitStatus());
+            System.out.println("signaled " + response.getSignaled());
+            System.out.print(response.getCoredump() ? "core dump\n" : "");
+            System.out.println("stdout len " + response.getStdOutput().size());
+            if (response.getStdOutput().size() > 0 && response.getStdOutput().size() < 8192) {
                 System.out.println(response.getStdOutput().toStringUtf8());
+            }
+            System.out.println("stderr len " + response.getStdError().size());
+            if (response.getStdError().size() > 0 && response.getStdError().size() < 8192) {
+                System.out.println(response.getStdError().toStringUtf8());
             }
         }
     }
@@ -68,14 +75,27 @@ public class SlaveClient {
         SlaveClient slaveClient = new SlaveClient(addr);
 
         slaveClient.getFileContent("/proc/uptime");
-        // slaveClient.runCommand("/bin/NotExist");
-        // slaveClient.runCommand("/etc/hosts");
-        //slaveClient.runCommand("/bin/pwd");
-        //slaveClient.runCommand("echo", "$PWD");
-        //slaveClient.runCommand("sort", "/etc/services");
+        slaveClient.runCommand("/bin/NotExist");
+        slaveClient.runCommand("/etc/hosts");
+        slaveClient.runCommand("/bin/pwd");
+        slaveClient.runCommand("echo", "$PWD");
+        slaveClient.runCommand("sort", "/etc/services");
+        slaveClient.runCommand("ls", "/proc/self/fd", "-l");
+        slaveClient.runCommand("ls", "/notexist", "-l");
         slaveClient.runCommand("cat", "/dev/zero");
-        // for (int i = 0; i < 100; ++i)
-        // slaveClient.runCommand("/bin/pwd");
+        slaveClient.runCommand("bin/dummy_load", "1");
+        slaveClient.runCommand("bin/dummy_load", "-n");
+        slaveClient.runCommand("bin/dummy_load", "-c");
+        slaveClient.runCommand("bin/dummy_load", "-a");
+        slaveClient.runCommand("bin/dummy_load", "-p");
+        slaveClient.runCommand("bin/dummy_load", "-v", "a", "b");
+        slaveClient.runCommand("bin/dummy_load", "-o", "100");
+        slaveClient.runCommand("bin/dummy_load", "-e", "100");
+        slaveClient.runCommand("bin/dummy_load", "-s", "1.5");
+        slaveClient.runCommand("bin/dummy_load", "-o", "100000");
+        slaveClient.runCommand("bin/dummy_load", "-o", "10000000");
+        slaveClient.runCommand("bin/dummy_load", "-e", "100000");
+        slaveClient.runCommand("bin/dummy_load", "-s", "20");
         slaveClient.close();
     }
 }

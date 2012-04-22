@@ -1,4 +1,3 @@
-
 add_executable(zurg_slave main.cc
   ChildManager.cc
   Process.cc
