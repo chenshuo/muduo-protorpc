@@ -26,7 +26,7 @@ class ChildManager : boost::noncopyable
  public:
   typedef boost::function<void(int status, const struct rusage&)> Callback;
 
-  explicit ChildManager(muduo::net::EventLoop* loop);
+  ChildManager(muduo::net::EventLoop* loop, int zombieInterval);
   ~ChildManager();
 
   void start();
@@ -40,6 +40,7 @@ class ChildManager : boost::noncopyable
   void onExit(pid_t pid, int status, const struct rusage&);
 
   muduo::net::EventLoop* loop_;
+  int zombieInterval_;
   int signalFd_;
   muduo::net::Channel channel_;
   std::map<pid_t, Callback> callbacks_;

@@ -12,20 +12,23 @@ struct SlaveConfig
   SlaveConfig()
     : succeed_(false),
       masterAddress_(),
-      listenPort_(-1)
+      listenPort_(-1),
+      zombieInterval_(10)
   {
   }
 
   SlaveConfig(const char* masterAddress, int listenPort)
     : succeed_(true),
       masterAddress_(masterAddress),
-      listenPort_(listenPort)
+      listenPort_(listenPort),
+      zombieInterval_(10)
   {
   }
 
   bool succeed_;
   string masterAddress_;
   int listenPort_;
+  int zombieInterval_;
 };
 
 }

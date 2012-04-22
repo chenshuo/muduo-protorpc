@@ -12,9 +12,9 @@
 using namespace muduo::net;
 using namespace zurg;
 
-SlaveServiceImpl::SlaveServiceImpl(EventLoop* loop)
+SlaveServiceImpl::SlaveServiceImpl(EventLoop* loop, int zombieInterval)
   : loop_(loop),
-    children_(new ChildManager(loop_))
+    children_(new ChildManager(loop_, zombieInterval))
 {
 }
 

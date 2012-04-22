@@ -67,6 +67,7 @@ class Pipe : boost::noncopyable
   int pipefd_[2];
 };
 
+int kSleepAfterExec = 0; // for strace child
 }
 
 using namespace zurg;
@@ -128,6 +129,12 @@ int Process::start()
 
 void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
 {
+  if (kSleepAfterExec > 0)
+  {
+    fprintf(stderr, "Child pid = %d", ::getpid());
+    ::sleep(kSleepAfterExec);
+  }
+
   std::vector<const char*> argv;
   argv.reserve(request_->args_size() + 2);
   argv.push_back(request_->command().c_str());
@@ -243,7 +250,7 @@ void Process::onExit(int status, const struct rusage& ru)
 
   assert(!loop_->eventHandling());
   // FIXME: defer 100ms to capture all outputs.
-  if (!stdoutChannel_->isNoneEvent())
+  if (stdoutChannel_ && !stdoutChannel_->isNoneEvent())
   {
     LOG_WARN << pid_ << " stdoutChannel_ disableAll before child closing";
     stdoutChannel_->disableAll();
@@ -270,22 +277,37 @@ void Process::onExit(int status, const struct rusage& ru)
 
 void Process::onReadStdout(muduo::Timestamp t)
 {
-  LOG_DEBUG << stdoutFd_;
   int savedErrno = 0;
   ssize_t n = stdoutBuffer_.readFd(stdoutFd_, &savedErrno);
+  LOG_TRACE << "read fd stdoutFd_ " << n << " bytes";
   if (n == 0)
   {
     LOG_DEBUG << "disableAll";
     stdoutChannel_->disableAll();
   }
-  // FIXME: max_stdout
+  if (static_cast<int32_t>(stdoutBuffer_.readableBytes()) > request_->max_stdout())
+  {
+    stdoutChannel_->disableAll();
+    // ::kill(pid_, SIGPIPE); doesn't work
+    // I hate this
+    loop_->queueInLoop(boost::bind(&Process::closeStdout, this));
+    // FIXME: race condition onExit
+  }
+}
+
+void Process::closeStdout()
+{
+  loop_->removeChannel(get_pointer(stdoutChannel_));
+  stdoutChannel_.reset();
+  ::close(stdoutFd_);
+  stdoutFd_ = -1;
 }
 
 void Process::onReadStderr(muduo::Timestamp t)
 {
-  LOG_DEBUG << stderrFd_;
   int savedErrno = 0;
   ssize_t n = stderrBuffer_.readFd(stderrFd_, &savedErrno);
+  LOG_TRACE << "read fd stderrFd_ " << n << " bytes";
   if (n == 0)
   {
     LOG_DEBUG << "disableAll";

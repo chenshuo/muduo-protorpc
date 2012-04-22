@@ -31,8 +31,9 @@ int initSigMask()
 
 static int dummy = initSigMask();
 
-ChildManager::ChildManager(muduo::net::EventLoop* loop)
+ChildManager::ChildManager(muduo::net::EventLoop* loop, int zombieInterval)
   : loop_(loop),
+    zombieInterval_(zombieInterval),
     signalFd_(::signalfd(-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC)),
     channel_(loop_, signalFd_)
 {

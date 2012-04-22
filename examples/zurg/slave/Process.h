@@ -9,6 +9,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace muduo
 {
@@ -26,7 +27,8 @@ namespace zurg
 
 class Pipe;
 
-class Process : boost::noncopyable
+class Process : public boost::enable_shared_from_this<Process>,
+                boost::noncopyable
 {
  public:
   Process(muduo::net::EventLoop* loop,
@@ -69,6 +71,8 @@ class Process : boost::noncopyable
   void onReadStderr(muduo::Timestamp t);
   void onCloseStdout();
   void onCloseStderr();
+  void closeStdout();
+  void closeStderr();
 
   muduo::net::EventLoop* loop_;
   RunCommandRequestPtr request_;

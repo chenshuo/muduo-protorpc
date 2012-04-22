@@ -22,7 +22,7 @@ class ChildManager;
 class SlaveServiceImpl : public SlaveService
 {
  public:
-  explicit SlaveServiceImpl(muduo::net::EventLoop* loop);
+  SlaveServiceImpl(muduo::net::EventLoop* loop, int zombieInterval);
   ~SlaveServiceImpl();
 
   void start();

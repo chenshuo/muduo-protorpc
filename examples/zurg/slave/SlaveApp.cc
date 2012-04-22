@@ -14,7 +14,7 @@ using namespace muduo::net;
 
 SlaveApp::SlaveApp(const SlaveConfig& config)
   : loop_(),
-    service_(new SlaveServiceImpl(&loop_))
+    service_(new SlaveServiceImpl(&loop_, config.zombieInterval_))
 {
   assert(config.succeed_);
 

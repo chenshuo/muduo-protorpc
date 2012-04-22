@@ -47,13 +47,16 @@ public class SlaveClient {
         RunCommandRequest request = RunCommandRequest.newBuilder()
                 .setCommand(cmd)
                 .addAllArgs(Arrays.asList(args))
+                .setMaxStdout(65536)
                 .setTimeout(5)
                 .build();
         RunCommandResponse response = slaveService.runCommand(null, request);
-        System.out.println(response.getErrorCode());
+        System.out.println("err = " + response.getErrorCode());
         if (response.getErrorCode() == 0) {
             System.out.println(response.getPid());
-            System.out.println(response);
+            System.out.println(response.getExitStatus());
+            System.out.println(response.getSignaled());
+            System.out.println(response.getStdOutput().size());
             if (response.getStdOutput().size() < 8192) {
                 System.out.println(response.getStdOutput().toStringUtf8());
             }
@@ -67,10 +70,10 @@ public class SlaveClient {
         slaveClient.getFileContent("/proc/uptime");
         // slaveClient.runCommand("/bin/NotExist");
         // slaveClient.runCommand("/etc/hosts");
-        slaveClient.runCommand("/bin/pwd");
-        // slaveClient.runCommand("cat", "/dev/zero");
-        slaveClient.runCommand("echo", "$PWD");
-        slaveClient.runCommand("sort", "/etc/services");
+        //slaveClient.runCommand("/bin/pwd");
+        //slaveClient.runCommand("echo", "$PWD");
+        //slaveClient.runCommand("sort", "/etc/services");
+        slaveClient.runCommand("cat", "/dev/zero");
         // for (int i = 0; i < 100; ++i)
         // slaveClient.runCommand("/bin/pwd");
         slaveClient.close();
