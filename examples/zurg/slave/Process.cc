@@ -1,5 +1,7 @@
 #include <examples/zurg/slave/Process.h>
 
+#include <examples/zurg/slave/Sink.h>
+
 #include <muduo/base/Logging.h>
 #include <muduo/base/ProcessInfo.h>
 #include <muduo/net/Channel.h>
@@ -67,37 +69,25 @@ class Pipe : boost::noncopyable
   int pipefd_[2];
 };
 
-int kSleepAfterExec = 0; // for strace child
+const int kSleepAfterExec = 0; // for strace child
 }
 
 using namespace zurg;
 using namespace muduo::net;
 
+Process::Process(muduo::net::EventLoop* loop,
+                 const RunCommandRequestPtr& request,
+                 const muduo::net::RpcDoneCallback& done)
+  : loop_(loop),
+    request_(request),
+    doneCallback_(done),
+    pid_(0)
+{
+}
+
 Process::~Process()
 {
   LOG_DEBUG << "Process[" << pid_ << "] dtor";
-
-  if (stdoutFd_ >= 0)
-  {
-    assert(stdoutChannel_);
-    loop_->removeChannel(get_pointer(stdoutChannel_));
-    ::close(stdoutFd_);
-  }
-  else
-  {
-    assert(!stdoutChannel_);
-  }
-
-  if (stderrFd_ >= 0)
-  {
-    assert(stderrChannel_);
-    loop_->removeChannel(get_pointer(stderrChannel_));
-    ::close(stderrFd_);
-  }
-  else
-  {
-    assert(!stderrChannel_);
-  }
 }
 
 int Process::start()
@@ -173,22 +163,16 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   {
     LOG_INFO << "started child pid " << pid_;
     // read nothing, child process exec successfully.
-    stdoutFd_ = ::dup(stdOutput.readFd());
-    stderrFd_ = ::dup(stdError.readFd());
-    if (stdoutFd_ < 0 || stderrFd_ < 0)
+    int stdoutFd = ::dup(stdOutput.readFd());
+    int stderrFd = ::dup(stdError.readFd());
+    if (stdoutFd < 0 || stderrFd < 0)
     {
       return errno;
     }
-    stdoutChannel_.reset(new Channel(loop_, stdoutFd_));
-    stderrChannel_.reset(new Channel(loop_, stderrFd_));
-    stdoutChannel_->setReadCallback(boost::bind(&Process::onReadStdout, this, _1));
-    stderrChannel_->setReadCallback(boost::bind(&Process::onReadStderr, this, _1));
-    stdoutChannel_->setCloseCallback(boost::bind(&Process::onCloseStdout, this));
-    stderrChannel_->setCloseCallback(boost::bind(&Process::onCloseStderr, this));
-    stdoutChannel_->doNotLogHup();
-    stderrChannel_->doNotLogHup();
-    stdoutChannel_->enableReading();
-    stderrChannel_->enableReading();
+    stdoutSink_.reset(new Sink(loop_, stdoutFd, request_->max_stdout(), "stdout"));
+    stderrSink_.reset(new Sink(loop_, stderrFd, request_->max_stderr(), "stderr"));
+    stdoutSink_->start();
+    stderrSink_->start();
     return 0;
   }
   else if (n == sizeof(childErrno))
@@ -250,22 +234,14 @@ void Process::onExit(int status, const struct rusage& ru)
 
   assert(!loop_->eventHandling());
   // FIXME: defer 100ms to capture all outputs.
-  if (stdoutChannel_ && !stdoutChannel_->isNoneEvent())
-  {
-    LOG_WARN << pid_ << " stdoutChannel_ disableAll before child closing";
-    stdoutChannel_->disableAll();
-  }
-  if (!stderrChannel_->isNoneEvent())
-  {
-    LOG_WARN << pid_ << " stderrChannel_ disableAll before child closing";
-    stderrChannel_->disableAll();
-  }
+  stdoutSink_->stop(pid_);
+  stderrSink_->stop(pid_);
 
   response.set_error_code(0);
   response.set_pid(pid_);
   response.set_status(status);
-  response.set_std_output(stdoutBuffer_.peek(), stdoutBuffer_.readableBytes());
-  response.set_std_error(stderrBuffer_.peek(), stderrBuffer_.readableBytes());
+  response.set_std_output(stdoutSink_->bufferAsStdString());
+  response.set_std_error(stderrSink_->bufferAsStdString());
   response.set_start_time_us(startTime_.microSecondsSinceEpoch());
   response.set_finish_time_us(muduo::Timestamp::now().microSecondsSinceEpoch());
   response.set_user_time(getSeconds(ru.ru_utime));
@@ -273,57 +249,4 @@ void Process::onExit(int status, const struct rusage& ru)
   response.set_memory_maxrss_kb(ru.ru_maxrss);
 
   doneCallback_(&response);
-}
-
-void Process::onReadStdout(muduo::Timestamp t)
-{
-  int savedErrno = 0;
-  ssize_t n = stdoutBuffer_.readFd(stdoutFd_, &savedErrno);
-  LOG_TRACE << "read fd stdoutFd_ " << n << " bytes";
-  if (n == 0)
-  {
-    LOG_DEBUG << "disableAll";
-    stdoutChannel_->disableAll();
-  }
-  if (static_cast<int32_t>(stdoutBuffer_.readableBytes()) > request_->max_stdout())
-  {
-    stdoutChannel_->disableAll();
-    // ::kill(pid_, SIGPIPE); doesn't work
-    // I hate this
-    loop_->queueInLoop(boost::bind(&Process::closeStdout, this));
-    // FIXME: race condition onExit
-  }
-}
-
-void Process::closeStdout()
-{
-  loop_->removeChannel(get_pointer(stdoutChannel_));
-  stdoutChannel_.reset();
-  ::close(stdoutFd_);
-  stdoutFd_ = -1;
-}
-
-void Process::onReadStderr(muduo::Timestamp t)
-{
-  int savedErrno = 0;
-  ssize_t n = stderrBuffer_.readFd(stderrFd_, &savedErrno);
-  LOG_TRACE << "read fd stderrFd_ " << n << " bytes";
-  if (n == 0)
-  {
-    LOG_DEBUG << "disableAll";
-    stderrChannel_->disableAll();
-  }
-  // FIXME: max_stderr
-}
-
-void Process::onCloseStdout()
-{
-  LOG_DEBUG << "disableAll";
-  stdoutChannel_->disableAll();
-}
-
-void Process::onCloseStderr()
-{
-  LOG_DEBUG << "disableAll";
-  stderrChannel_->disableAll();
 }

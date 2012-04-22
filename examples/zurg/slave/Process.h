@@ -26,6 +26,7 @@ namespace zurg
 {
 
 class Pipe;
+class Sink;
 
 class Process : public boost::enable_shared_from_this<Process>,
                 boost::noncopyable
@@ -33,15 +34,7 @@ class Process : public boost::enable_shared_from_this<Process>,
  public:
   Process(muduo::net::EventLoop* loop,
           const RunCommandRequestPtr& request,
-          const muduo::net::RpcDoneCallback& done)
-    : loop_(loop),
-      request_(request),
-      doneCallback_(done),
-      pid_(0),
-      stdoutFd_(-1),
-      stderrFd_(-1)
-  {
-  }
+          const muduo::net::RpcDoneCallback& done);
 
   ~Process();
 
@@ -67,26 +60,15 @@ class Process : public boost::enable_shared_from_this<Process>,
        __attribute__ ((__noreturn__));;
   int afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError);
 
-  void onReadStdout(muduo::Timestamp t);
-  void onReadStderr(muduo::Timestamp t);
-  void onCloseStdout();
-  void onCloseStderr();
-  void closeStdout();
-  void closeStderr();
-
   muduo::net::EventLoop* loop_;
   RunCommandRequestPtr request_;
   muduo::net::RpcDoneCallback doneCallback_;
   pid_t pid_;
   muduo::Timestamp startTime_;
   muduo::net::TimerId timerId_;
-
-  int stdoutFd_;
-  int stderrFd_;
-  muduo::net::Buffer stdoutBuffer_;
-  muduo::net::Buffer stderrBuffer_;
-  boost::scoped_ptr<muduo::net::Channel> stdoutChannel_;
-  boost::scoped_ptr<muduo::net::Channel> stderrChannel_;
+  // FIXME: replace with shared_ptr
+  boost::scoped_ptr<Sink> stdoutSink_;
+  boost::scoped_ptr<Sink> stderrSink_;
 };
 typedef boost::shared_ptr<Process> ProcessPtr;
 
