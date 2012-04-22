@@ -9,7 +9,7 @@ namespace zurg
 {
 
 // a minimal TcpConnection which only receives.
-class Sink : // public boost::enable_shared_from_this<Process>,
+class Sink : public boost::enable_shared_from_this<Sink>,
              boost::noncopyable
 {
  public:
@@ -29,6 +29,7 @@ class Sink : // public boost::enable_shared_from_this<Process>,
   ~Sink()
   {
     LOG_TRACE << whoami_ << fd_;
+    assert(!loop_->eventHandling());
     if (fd_ >= 0)
     {
       loop_->removeChannel(&ch_);
@@ -38,6 +39,7 @@ class Sink : // public boost::enable_shared_from_this<Process>,
 
   void start()
   {
+    ch_.tie(shared_from_this());
     ch_.enableReading();
   }
 
@@ -45,7 +47,7 @@ class Sink : // public boost::enable_shared_from_this<Process>,
   {
     if (!ch_.isNoneEvent())
     {
-      LOG_WARN << pid << whoami_ << " disableAll before child closing";
+      LOG_WARN << pid << whoami_ << " stop before child hup";
       ch_.disableAll();
     }
   }
@@ -70,9 +72,7 @@ class Sink : // public boost::enable_shared_from_this<Process>,
     {
       ch_.disableAll();
       // ::kill(pid_, SIGPIPE); doesn't work
-      // I hate this
-      loop_->queueInLoop(boost::bind(&Sink::delayedClose, this));
-      // FIXME: race condition onExit
+      loop_->queueInLoop(boost::bind(&Sink::delayedClose, shared_from_this()));
     }
   }
 

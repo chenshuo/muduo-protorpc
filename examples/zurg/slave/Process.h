@@ -7,7 +7,6 @@
 #include <muduo/net/TimerId.h>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -66,9 +65,8 @@ class Process : public boost::enable_shared_from_this<Process>,
   pid_t pid_;
   muduo::Timestamp startTime_;
   muduo::net::TimerId timerId_;
-  // FIXME: replace with shared_ptr
-  boost::scoped_ptr<Sink> stdoutSink_;
-  boost::scoped_ptr<Sink> stderrSink_;
+  boost::shared_ptr<Sink> stdoutSink_;
+  boost::shared_ptr<Sink> stderrSink_;
 };
 typedef boost::shared_ptr<Process> ProcessPtr;
 

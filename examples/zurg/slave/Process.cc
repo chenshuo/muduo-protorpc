@@ -88,6 +88,10 @@ Process::Process(muduo::net::EventLoop* loop,
 Process::~Process()
 {
   LOG_DEBUG << "Process[" << pid_ << "] dtor";
+  if (stdoutSink_ || stderrSink_)
+  {
+    assert(!loop_->eventHandling());
+  }
 }
 
 int Process::start()
@@ -102,7 +106,7 @@ int Process::start()
   if (result == 0)
   {
     // child process
-    execChild(execError, stdOutput, stdError);
+    execChild(execError, stdOutput, stdError); // never return
   }
   else if (result > 0)
   {
@@ -142,6 +146,7 @@ void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   ::close(stdInput);
   ::dup2(stdOutput.writeFd(), STDOUT_FILENO);
   ::dup2(stdError.writeFd(), STDERR_FILENO);
+  ::chdir(request_->cwd().c_str());
   const char* cmd = request_->command().c_str();
   ::execvp(cmd, const_cast<char**>(&*argv.begin()));
   // should not reach here
