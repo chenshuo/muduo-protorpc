@@ -111,21 +111,7 @@ int Process::start()
   if (result == 0)
   {
     // child process
-    ::sigprocmask(SIG_SETMASK, &oldSigmask, NULL);
-    // FIXME: max_memory_mb
-    int stdInput = ::open("/dev/null", O_RDONLY);
-    ::dup2(stdInput, STDIN_FILENO);
-    ::close(stdInput);
-    ::dup2(stdOutput.writeFd(), STDOUT_FILENO);
-    ::dup2(stdError.writeFd(), STDERR_FILENO);
-    const char* cmd = runCommandRequest->command().c_str();
-    ::execlp(cmd, cmd, static_cast<const char*>(NULL));
-    // should not reach here
-    int32_t err = errno;
-    // FIXME: in child process, logging fd is closed.
-    LOG_ERROR << "CHILD " << muduo::strerror_tl(err) << " (errno=" << err << ")";
-    ::write(execError.writeFd(), &err, sizeof(err));
-    ::exit(1);
+    execChild(execError, stdOutput, stdError);
   }
   else if (result > 0)
   {
@@ -138,6 +124,35 @@ int Process::start()
     // failed
     return errno;
   }
+}
+
+void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
+{
+  std::vector<const char*> argv;
+  argv.reserve(request_->args_size() + 2);
+  argv.push_back(request_->command().c_str());
+  for (int i = 0; i < request_->args_size(); ++i)
+  {
+    argv.push_back(request_->args(i).c_str());
+  }
+  argv.push_back(NULL);
+
+  ::sigprocmask(SIG_SETMASK, &oldSigmask, NULL);
+  // FIXME: max_memory_mb
+  // FIXME: environ
+  int stdInput = ::open("/dev/null", O_RDONLY);
+  ::dup2(stdInput, STDIN_FILENO);
+  ::close(stdInput);
+  ::dup2(stdOutput.writeFd(), STDOUT_FILENO);
+  ::dup2(stdError.writeFd(), STDERR_FILENO);
+  const char* cmd = request_->command().c_str();
+  ::execvp(cmd, const_cast<char**>(&*argv.begin()));
+  // should not reach here
+  int32_t err = errno;
+  // FIXME: in child process, logging fd is closed.
+  // LOG_ERROR << "CHILD " << muduo::strerror_tl(err) << " (errno=" << err << ")";
+  ::write(execError.writeFd(), &err, sizeof(err));
+  ::exit(1);
 }
 
 int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
@@ -208,21 +223,25 @@ void Process::onTimeout()
 
 void Process::onExit(int status, const struct rusage& ru)
 {
-  char buf[256];
+  RunCommandResponse response;
 
+  char buf[256];
   if (WIFEXITED(status))
   {
     snprintf(buf, sizeof buf, "exit status %d", WEXITSTATUS(status));
+    response.set_exit_status(WEXITSTATUS(status));
   }
   else if (WIFSIGNALED(status))
   {
     snprintf(buf, sizeof buf, "signaled %d%s",
              WTERMSIG(status), WCOREDUMP(status) ? " (core dump)" : "");
+    response.set_signaled(WTERMSIG(status));
+    response.set_coredump(WCOREDUMP(status));
   }
 
   LOG_INFO << "Process[" << pid_ << "] onExit " << buf;
-  assert(!loop_->eventHandling());
 
+  assert(!loop_->eventHandling());
   // FIXME: defer 100ms to capture all outputs.
   if (!stdoutChannel_->isNoneEvent())
   {
@@ -235,18 +254,18 @@ void Process::onExit(int status, const struct rusage& ru)
     stderrChannel_->disableAll();
   }
 
-  RunCommandResponse response;
   response.set_error_code(0);
   response.set_pid(pid_);
   response.set_status(status);
   response.set_std_output(stdoutBuffer_.peek(), stdoutBuffer_.readableBytes());
+  response.set_std_error(stderrBuffer_.peek(), stderrBuffer_.readableBytes());
   response.set_start_time_us(startTime_.microSecondsSinceEpoch());
   response.set_finish_time_us(muduo::Timestamp::now().microSecondsSinceEpoch());
   response.set_user_time(getSeconds(ru.ru_utime));
   response.set_system_time(getSeconds(ru.ru_stime));
   response.set_memory_maxrss_kb(ru.ru_maxrss);
 
-  doneCallback(&response);
+  doneCallback_(&response);
 }
 
 void Process::onReadStdout(muduo::Timestamp t)

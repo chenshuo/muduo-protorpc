@@ -33,8 +33,8 @@ class Process : boost::noncopyable
           const RunCommandRequestPtr& request,
           const muduo::net::RpcDoneCallback& done)
     : loop_(loop),
-      runCommandRequest(request),
-      doneCallback(done),
+      request_(request),
+      doneCallback_(done),
       pid_(0),
       stdoutFd_(-1),
       stderrFd_(-1)
@@ -61,6 +61,8 @@ class Process : boost::noncopyable
   static void onTimeoutWeak(const boost::weak_ptr<Process>& wkPtr);
 
  private:
+  void execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
+       __attribute__ ((__noreturn__));;
   int afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError);
 
   void onReadStdout(muduo::Timestamp t);
@@ -69,8 +71,8 @@ class Process : boost::noncopyable
   void onCloseStderr();
 
   muduo::net::EventLoop* loop_;
-  RunCommandRequestPtr runCommandRequest;
-  muduo::net::RpcDoneCallback doneCallback;
+  RunCommandRequestPtr request_;
+  muduo::net::RpcDoneCallback doneCallback_;
   pid_t pid_;
   muduo::Timestamp startTime_;
   muduo::net::TimerId timerId_;

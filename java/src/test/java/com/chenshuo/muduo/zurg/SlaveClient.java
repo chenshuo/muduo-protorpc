@@ -1,6 +1,8 @@
 package com.chenshuo.muduo.zurg;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Collections;
 
 import com.chenshuo.muduo.protorpc.RpcChannel;
 import com.chenshuo.muduo.protorpc.RpcClient;
@@ -42,9 +44,20 @@ public class SlaveClient {
     }
 
     public void runCommand(String cmd, String... args) throws Exception {
-        RunCommandRequest request = RunCommandRequest.newBuilder().setCommand(cmd).build();
+        RunCommandRequest request = RunCommandRequest.newBuilder()
+                .setCommand(cmd)
+                .addAllArgs(Arrays.asList(args))
+                .setTimeout(5)
+                .build();
         RunCommandResponse response = slaveService.runCommand(null, request);
-        System.out.println(response);
+        System.out.println(response.getErrorCode());
+        if (response.getErrorCode() == 0) {
+            System.out.println(response.getPid());
+            System.out.println(response);
+            if (response.getStdOutput().size() < 8192) {
+                System.out.println(response.getStdOutput().toStringUtf8());
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -52,13 +65,14 @@ public class SlaveClient {
         SlaveClient slaveClient = new SlaveClient(addr);
 
         slaveClient.getFileContent("/proc/uptime");
-        slaveClient.runCommand("/bin/NotExist");
-        slaveClient.runCommand("/etc/hosts");
+        // slaveClient.runCommand("/bin/NotExist");
+        // slaveClient.runCommand("/etc/hosts");
         slaveClient.runCommand("/bin/pwd");
-        slaveClient.runCommand("./lsfd.rb");
-        slaveClient.runCommand("/bin/false");
-        slaveClient.runCommand("./sleep.py");
-
+        // slaveClient.runCommand("cat", "/dev/zero");
+        slaveClient.runCommand("echo", "$PWD");
+        slaveClient.runCommand("sort", "/etc/services");
+        // for (int i = 0; i < 100; ++i)
+        // slaveClient.runCommand("/bin/pwd");
         slaveClient.close();
     }
 }

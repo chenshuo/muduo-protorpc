@@ -57,6 +57,8 @@ int main(int argc, char* argv[])
     return 1;
   }
 
+  // we can't setrlimit as it will be inherited by child processes.
+
   google::protobuf::SetLogHandler(zurgLogHandler);
   SlaveConfig config(parseCommandLine(argc, argv));
   if (config.succeed_)
