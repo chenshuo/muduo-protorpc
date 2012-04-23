@@ -12,6 +12,7 @@
 #define MUDUO_PROTORPC2_RPCSERVER_H
 
 #include <muduo/net/TcpServer.h>
+#include <muduo/protorpc2/RpcService.h>
 
 namespace muduo
 {
@@ -31,6 +32,7 @@ class RpcServer
     server_.setThreadNum(numThreads);
   }
 
+  // NOT thread safe, must call before start().
   void registerService(Service*);
   void start();
 
@@ -44,6 +46,7 @@ class RpcServer
   EventLoop* loop_;
   TcpServer server_;
   std::map<std::string, Service*> services_;
+  RpcServiceImpl metaService_;
 };
 
 }

@@ -77,6 +77,7 @@ class RpcChannel;
 class Service;
 class RpcController;
 typedef ::boost::function1<void, const ::google::protobuf::Message*> RpcDoneCallback;
+typedef ::std::map<std::string, Service*> ServiceMap;
 
 // Abstract base interface for protocol-buffer-based RPC services.  Services
 // themselves are abstract interfaces (implemented either by servers or as

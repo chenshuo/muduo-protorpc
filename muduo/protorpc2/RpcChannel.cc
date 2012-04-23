@@ -35,14 +35,16 @@ static int test_down_pointer_cast()
 static int dummy = test_down_pointer_cast();
 
 RpcChannel::RpcChannel()
-  : codec_(boost::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3))
+  : codec_(boost::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
+    services_(NULL)
 {
   LOG_INFO << "RpcChannel::ctor - " << this;
 }
 
 RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
   : codec_(boost::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
-    conn_(conn)
+    conn_(conn),
+    services_(NULL)
 {
   LOG_INFO << "RpcChannel::ctor - " << this;
 }
@@ -132,7 +134,7 @@ void RpcChannel::callServiceMethod(const RpcMessage& message)
 {
   if (services_)
   {
-    std::map<std::string, Service*>::const_iterator it = services_->find(message.service());
+    ServiceMap::const_iterator it = services_->find(message.service());
     if (it != services_->end())
     {
       Service* service = it->second;

@@ -128,6 +128,8 @@ class Service;
 class RpcChannel : boost::noncopyable
 {
  public:
+  typedef std::map<std::string, Service*> ServiceMap;
+
   RpcChannel();
 
   explicit RpcChannel(const TcpConnectionPtr& conn);
@@ -139,7 +141,12 @@ class RpcChannel : boost::noncopyable
     conn_ = conn;
   }
 
-  void setServices(const std::map<std::string, Service*>* services)
+  const ServiceMap* getServices() const
+  {
+    return services_;
+  }
+
+  void setServices(const ServiceMap* services)
   {
     services_ = services;
   }
@@ -197,7 +204,7 @@ class RpcChannel : boost::noncopyable
   MutexLock mutex_;
   std::map<int64_t, OutstandingCall> outstandings_;
 
-  const std::map<std::string, Service*>* services_;
+  const ServiceMap* services_;
 };
 typedef boost::shared_ptr<RpcChannel> RpcChannelPtr;
 

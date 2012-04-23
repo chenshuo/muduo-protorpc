@@ -23,12 +23,15 @@ using namespace muduo::net;
 RpcServer::RpcServer(EventLoop* loop,
                        const InetAddress& listenAddr)
   : loop_(loop),
-    server_(loop, listenAddr, "RpcServer")
+    server_(loop, listenAddr, "RpcServer"),
+    services_(),
+    metaService_(&services_)
 {
   server_.setConnectionCallback(
       boost::bind(&RpcServer::onConnection, this, _1));
 //   server_.setMessageCallback(
 //       boost::bind(&RpcServer::onMessage, this, _1, _2, _3));
+  registerService(&metaService_);
 }
 
 void RpcServer::registerService(muduo::net::Service* service)
