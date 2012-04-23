@@ -24,7 +24,7 @@ void output(FILE* file, int bytes)
 int main(int argc, char* argv[])
 {
   int opt = 0;
-  while ( (opt = getopt(argc, argv, "ace:o:ps:v")) != -1)
+  while ( (opt = getopt(argc, argv, "ace:m:o:ps:v")) != -1)
   {
     switch (opt)
     {
@@ -36,6 +36,9 @@ int main(int argc, char* argv[])
         break;
       case 'e':
         output(stderr, atoi(optarg));
+        break;
+      case 'm':
+        free(calloc(atoi(optarg), 1024));
         break;
       case 'o':
         output(stdout, atoi(optarg));

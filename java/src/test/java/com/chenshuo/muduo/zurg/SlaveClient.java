@@ -59,6 +59,7 @@ public class SlaveClient {
             System.out.println("exit " + response.getExitStatus());
             System.out.println("signaled " + response.getSignaled());
             System.out.print(response.getCoredump() ? "core dump\n" : "");
+            System.out.println("max mem " + response.getMemoryMaxrssKb());
             System.out.println("stdout len " + response.getStdOutput().size());
             if (response.getStdOutput().size() > 0 && response.getStdOutput().size() < 8192) {
                 System.out.println(response.getStdOutput().toStringUtf8());
@@ -89,6 +90,7 @@ public class SlaveClient {
         slaveClient.runCommand("bin/dummy_load", "-a");
         slaveClient.runCommand("bin/dummy_load", "-p");
         slaveClient.runCommand("bin/dummy_load", "-v", "a", "b");
+        slaveClient.runCommand("bin/dummy_load", "-m", "102400");
         slaveClient.runCommand("bin/dummy_load", "-o", "100");
         slaveClient.runCommand("bin/dummy_load", "-e", "100");
         slaveClient.runCommand("bin/dummy_load", "-s", "1.5");
