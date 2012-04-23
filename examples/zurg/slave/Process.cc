@@ -97,6 +97,12 @@ Process::~Process()
 int Process::start()
 {
   assert(muduo::ProcessInfo::threads().size() == 1);
+  int availabltFds = muduo::ProcessInfo::maxOpenFiles() - muduo::ProcessInfo::openedFiles();
+  if (availabltFds < 20)
+  {
+    // to fork() and capture stdout/stderr, we need new file descriptors.
+    return EMFILE;
+  }
 
   // The self-pipe trick
   // http://cr.yp.to/docs/selfpipe.html
