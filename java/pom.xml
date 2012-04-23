@@ -12,6 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <muduo.includedir>../../build/debug-install/include/muduo/net/protorpc</muduo.includedir>
   </properties>
 
   <build>
@@ -39,7 +40,34 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
-            <id>compile-protoc</id>
+            <id>compile-rpc-proto</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <tasks>
+                <mkdir dir="target/generated-sources"/>
+                <path id="proto.path">
+                  <fileset dir="${muduo.includedir}">
+                    <include name="*.proto" />
+                  </fileset>
+                </path>
+                <path id="proto.path2">
+                  <pathelement location="${muduo.includedir}" />
+                </path>
+                <pathconvert pathsep=" " property="proto.files" refid="proto.path" />
+                <pathconvert pathsep=" " property="proto.include" refid="proto.path2" />
+                <exec executable="protoc" failonerror="true">
+                  <arg value="--java_out=target/generated-sources"/>
+                  <arg value="-I${proto.include}" />
+                  <arg line="${proto.files}"/>
+                </exec>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>compile-protos</id>
             <phase>generate-sources</phase>
             <configuration>
               <tasks>
