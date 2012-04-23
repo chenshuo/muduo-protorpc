@@ -118,11 +118,12 @@ public class RpcChannel implements com.google.protobuf.RpcChannel, BlockingRpcCh
         }
     }
 
-    private Message fromByteString(Message prototype, ByteString bytes) {
+    public static Message fromByteString(Message prototype, ByteString bytes) {
         Message message = null;
         try {
             message = prototype.toBuilder().mergeFrom(bytes).build();
         } catch (Exception e) {
+            e.printStackTrace();
         }
         return message;
     }

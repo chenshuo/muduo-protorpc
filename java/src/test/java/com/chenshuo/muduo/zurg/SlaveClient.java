@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 import com.chenshuo.muduo.protorpc.RpcChannel;
 import com.chenshuo.muduo.protorpc.RpcClient;
-import com.chenshuo.muduo.zurg.proto.SlaveProto;
 import com.chenshuo.muduo.zurg.proto.SlaveProto.GetFileContentRequest;
 import com.chenshuo.muduo.zurg.proto.SlaveProto.GetFileContentResponse;
 import com.chenshuo.muduo.zurg.proto.SlaveProto.RunCommandRequest;
@@ -22,7 +21,7 @@ public class SlaveClient {
     public SlaveClient(InetSocketAddress addr) {
         client = new RpcClient();
         channel = client.blockingConnect(addr);
-        slaveService = SlaveProto.SlaveService.newBlockingStub(channel);
+        slaveService = SlaveService.newBlockingStub(channel);
     }
 
     public void close() {
