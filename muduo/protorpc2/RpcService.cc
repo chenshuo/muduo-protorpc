@@ -70,8 +70,24 @@ void RpcServiceImpl::getService(const GetServiceRequestPtr& request,
                                 const RpcDoneCallback& done)
 {
   GetServiceResponse response;
-  response.set_error(NO_SERVICE);
-  // FIXME:
+  ServiceMap::const_iterator it = services_->find(request->service_name());
+  if (it != services_->end())
+  {
+    response.set_error(NO_ERROR);
+    const ::google::protobuf::FileDescriptor* fd = it->second->GetDescriptor()->file();
+    response.add_proto_file(fd->DebugString());
+    response.add_proto_file_name(fd->name());
+    // FIXME: recursive
+    for (int i = 0; i < fd->dependency_count(); ++i)
+    {
+      response.add_proto_file(fd->dependency(i)->DebugString());
+      response.add_proto_file_name(fd->dependency(i)->name());
+    }
+  }
+  else
+  {
+    response.set_error(NO_SERVICE);
+  }
   done(&response);
 }
 

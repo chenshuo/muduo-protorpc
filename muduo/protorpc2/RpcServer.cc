@@ -31,6 +31,7 @@ RpcServer::RpcServer(EventLoop* loop,
       boost::bind(&RpcServer::onConnection, this, _1));
 //   server_.setMessageCallback(
 //       boost::bind(&RpcServer::onMessage, this, _1, _2, _3));
+
   registerService(&metaService_);
 }
 
