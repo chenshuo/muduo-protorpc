@@ -152,14 +152,17 @@ void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   ::close(stdInput);
   ::dup2(stdOutput.writeFd(), STDOUT_FILENO);
   ::dup2(stdError.writeFd(), STDERR_FILENO);
-  ::chdir(request_->cwd().c_str());
-  const char* cmd = request_->command().c_str();
-  ::execvp(cmd, const_cast<char**>(&*argv.begin()));
+  if (::chdir(request_->cwd().c_str()) == 0)
+  {
+    const char* cmd = request_->command().c_str();
+    ::execvp(cmd, const_cast<char**>(&*argv.begin()));
+  }
   // should not reach here
   int32_t err = errno;
   // FIXME: in child process, logging fd is closed.
   // LOG_ERROR << "CHILD " << muduo::strerror_tl(err) << " (errno=" << err << ")";
-  ::write(execError.writeFd(), &err, sizeof(err));
+  ssize_t n = ::write(execError.writeFd(), &err, sizeof(err));
+  assert(n == sizeof(err)); (void)n;
   ::exit(1);
 }
 
