@@ -4,6 +4,7 @@
 
 #include <muduo/base/Logging.h>
 #include <muduo/base/ProcessInfo.h>
+#include <muduo/base/FileUtil.h>
 #include <muduo/net/Channel.h>
 #include <muduo/net/EventLoop.h>
 
@@ -53,6 +54,17 @@ class Pipe : boost::noncopyable
   int readFd() const { return pipefd_[0]; }
   int writeFd() const { return pipefd_[1]; }
 
+  ssize_t read(int64_t* x)
+  {
+    return ::read(readFd(), x, sizeof(*x));
+  }
+
+  void write(int64_t x)
+  {
+    ssize_t n = ::write(writeFd(), &x, sizeof(x));
+    assert(n == sizeof(x)); (void)n;
+  }
+
   void closeRead()
   {
     ::close(pipefd_[0]);
@@ -69,6 +81,55 @@ class Pipe : boost::noncopyable
   int pipefd_[2];
 };
 
+struct ProcStatFile
+{
+ public:
+  explicit ProcStatFile(int pid)
+    : valid(false),
+      ppid(0),
+      startTime(0)
+  {
+    char filename[64];
+    ::snprintf(filename, sizeof filename, "/proc/%d/stat", pid);
+    muduo::FileUtil::SmallFile file(filename);
+    if (file.readToBuffer(NULL) == 0)
+    {
+      valid = true;
+      parse(file.buffer());
+    }
+  }
+
+  bool valid;
+  int ppid;
+  int64_t startTime;
+
+ private:
+  void parse(const char* buffer)
+  {
+    // do_task_stat() in fs/proc/array.c
+    // pid (cmd) S ppid pgid sid
+    const char* p = buffer;
+    p = strchr(p, ')');
+    for (int i = 0; i < 20 && (p); ++i)
+    {
+      p = strchr(p, ' ');
+      if (p)
+      {
+        if (i == 1)
+        {
+          ppid = atoi(p);
+        }
+        ++p;
+      }
+    }
+    if (p)
+    {
+      startTime = atoll(p);
+    }
+  }
+
+};
+
 const int kSleepAfterExec = 0; // for strace child
 }
 
@@ -81,7 +142,8 @@ Process::Process(muduo::net::EventLoop* loop,
   : loop_(loop),
     request_(request),
     doneCallback_(done),
-    pid_(0)
+    pid_(0),
+    startTimeInJiffies_(0)
 {
 }
 
@@ -96,7 +158,7 @@ Process::~Process()
 
 int Process::start()
 {
-  assert(muduo::ProcessInfo::threads().size() == 1);
+  assert(muduo::ProcessInfo::numThreads() == 1);
   int availabltFds = muduo::ProcessInfo::maxOpenFiles() - muduo::ProcessInfo::openedFiles();
   if (availabltFds < 20)
   {
@@ -135,6 +197,9 @@ void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
     ::sleep(kSleepAfterExec);
   }
 
+  ProcStatFile stat(muduo::ProcessInfo::pid());
+  execError.write(stat.startTime);
+
   std::vector<const char*> argv;
   argv.reserve(request_->args_size() + 2);
   argv.push_back(request_->command().c_str());
@@ -158,11 +223,9 @@ void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
     ::execvp(cmd, const_cast<char**>(&*argv.begin()));
   }
   // should not reach here
-  int32_t err = errno;
+  execError.write(errno);
   // FIXME: in child process, logging fd is closed.
   // LOG_ERROR << "CHILD " << muduo::strerror_tl(err) << " (errno=" << err << ")";
-  ssize_t n = ::write(execError.writeFd(), &err, sizeof(err));
-  assert(n == sizeof(err)); (void)n;
   ::exit(1);
 }
 
@@ -170,9 +233,14 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
 {
   LOG_DEBUG << "PARENT child pid " << pid_;
   startTime_ = muduo::Timestamp::now();
-  int32_t childErrno = 0;
+  int64_t childStartTime = 0;
+  int64_t childErrno = 0;
   execError.closeWrite();
-  ssize_t n = ::read(execError.readFd(), &childErrno, sizeof(childErrno));
+  ssize_t n = execError.read(&childStartTime);
+  assert(n == sizeof(childStartTime));
+  startTimeInJiffies_ = childStartTime;
+  LOG_DEBUG << "PARENT child start time " << childStartTime;
+  n = execError.read(&childErrno);
   if (n == 0)
   {
     LOG_INFO << "started child pid " << pid_;
@@ -191,9 +259,10 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   }
   else if (n == sizeof(childErrno))
   {
-    LOG_ERROR << "PARENT child error " << muduo::strerror_tl(childErrno)
-      << " (errno=" << childErrno << ")";
-    return childErrno;
+    int err = static_cast<int>(childErrno);
+    LOG_ERROR << "PARENT child error " << muduo::strerror_tl(err)
+              << " (errno=" << childErrno << ")";
+    return err;
   }
   else if (n < 0)
   {
@@ -221,7 +290,14 @@ void Process::onTimeout()
 {
   // kill process
   LOG_INFO << "Process[" << pid_ << "] onTimeout";
-  ::kill(pid_, SIGINT);
+
+  const ProcStatFile stat(pid_);
+  if (stat.valid
+      && stat.ppid == muduo::ProcessInfo::pid()
+      && stat.startTime == startTimeInJiffies_)
+  {
+    ::kill(pid_, SIGINT);
+  }
 }
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"

@@ -64,6 +64,7 @@ class Process : public boost::enable_shared_from_this<Process>,
   muduo::net::RpcDoneCallback doneCallback_;
   pid_t pid_;
   muduo::Timestamp startTime_;
+  int64_t startTimeInJiffies_;
   muduo::net::TimerId timerId_;
   boost::shared_ptr<Sink> stdoutSink_;
   boost::shared_ptr<Sink> stderrSink_;
