@@ -344,7 +344,7 @@ void Process::onExit(int status, const struct rusage& ru)
   LOG_INFO << "Process[" << pid_ << "] onExit " << buf;
 
   assert(!loop_->eventHandling());
-  // FIXME: defer 100ms to capture all outputs.
+  // FIXME: defer 100ms or blocking read to capture all outputs.
   stdoutSink_->stop(pid_);
   stderrSink_->stop(pid_);
 

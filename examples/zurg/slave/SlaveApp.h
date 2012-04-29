@@ -17,6 +17,8 @@ class RpcServer;
 namespace zurg
 {
 
+class Heartbeat;
+class RpcClient;
 class SlaveConfig;
 class SlaveServiceImpl;
 
@@ -30,7 +32,10 @@ class SlaveApp : boost::noncopyable
 
  private:
   muduo::net::EventLoop loop_;
+  const SlaveConfig& config_;
+  boost::scoped_ptr<RpcClient> rpcClient_;
   boost::scoped_ptr<SlaveServiceImpl> service_;
+  boost::scoped_ptr<Heartbeat> heartbeat_;
 
   // optional
   boost::scoped_ptr<muduo::net::RpcServer> server_;

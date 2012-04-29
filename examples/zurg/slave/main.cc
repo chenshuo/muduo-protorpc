@@ -14,39 +14,35 @@ using namespace zurg;
 
 void usage(const char* prog)
 {
-  printf("Usage\n%s [-d listen_port] master_ip:master_port\n", prog);
+  printf("Usage\n%s [-d listen_port] -n name master_ip:master_port\n", prog);
 }
 
 SlaveConfig parseCommandLine(int argc, char* argv[])
 {
-  bool succeed = true;
-
   int opt = 0;
-  int listenPort = -1;
-  while ( (opt = ::getopt(argc, argv, "d:")) != -1)
+  SlaveConfig config;
+  while ( (opt = ::getopt(argc, argv, "d:n:")) != -1)
   {
     switch (opt)
     {
       case 'd':
-        listenPort = atoi(optarg);
+        config.listenPort_ = atoi(optarg);
+        break;
+      case 'n':
+        config.myName_ = optarg;
         break;
       default:
-        succeed = false;
+        config.error_ = true;
         ;
     }
   }
 
-  const char* masterAddress = NULL;
-  if (optind >= argc)
+  if (optind < argc)
   {
-    succeed = false;
-  }
-  else
-  {
-    masterAddress = argv[optind];
+    config.masterAddress_ = argv[optind];
   }
 
-  return succeed ? SlaveConfig(masterAddress, listenPort) : SlaveConfig();
+  return config;
 }
 
 int main(int argc, char* argv[])
@@ -61,7 +57,7 @@ int main(int argc, char* argv[])
 
   google::protobuf::SetLogHandler(zurgLogHandler);
   SlaveConfig config(parseCommandLine(argc, argv));
-  if (config.succeed_)
+  if (config.valid())
   {
     SlaveApp app(config);
     app.run();

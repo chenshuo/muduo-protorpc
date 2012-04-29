@@ -50,7 +50,7 @@ ChildManager::~ChildManager()
 
 void ChildManager::start()
 {
-  loop_->runEvery(10.0, boost::bind(&ChildManager::onTimer, this));
+  loop_->runEvery(zombieInterval_, boost::bind(&ChildManager::onTimer, this));
   channel_.setReadCallback(boost::bind(&ChildManager::onRead, this, _1));
   channel_.enableReading();
 }

@@ -1,5 +1,6 @@
 #include <examples/zurg/slave/SlaveApp.h>
 
+#include <examples/zurg/slave/Heartbeat.h>
 #include <examples/zurg/slave/SlaveConfig.h>
 #include <examples/zurg/slave/SlaveService.h>
 
@@ -9,14 +10,30 @@
 
 #include <assert.h>
 
+namespace zurg
+{
+
+class RpcClient : boost::noncopyable
+{
+ public:
+  RpcClient(muduo::net::EventLoop* loop, const muduo::string& masterAddr)
+  {
+  }
+};
+
+}
+
 using namespace zurg;
 using namespace muduo::net;
 
 SlaveApp::SlaveApp(const SlaveConfig& config)
   : loop_(),
-    service_(new SlaveServiceImpl(&loop_, config.zombieInterval_))
+    config_(config),
+    rpcClient_(new RpcClient(&loop_, config.masterAddress_)),
+    service_(new SlaveServiceImpl(&loop_, config.zombieInterval_)),
+    heartbeat_(new Heartbeat)
 {
-  assert(config.succeed_);
+  assert(config.valid());
 
   LOG_INFO << "Start zurg_slave";
   if (config.listenPort_ > 0)
@@ -37,6 +54,7 @@ SlaveApp::~SlaveApp()
 void SlaveApp::run()
 {
   service_->start();
+  heartbeat_->start();
   if (server_)
   {
     server_->start();

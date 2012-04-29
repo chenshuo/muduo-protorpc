@@ -10,25 +10,24 @@ using muduo::string;
 struct SlaveConfig
 {
   SlaveConfig()
-    : succeed_(false),
-      masterAddress_(),
+    : error_(false),
       listenPort_(-1),
-      zombieInterval_(10)
+      zombieInterval_(10),
+      heartbeatInterval_(10)
   {
   }
 
-  SlaveConfig(const char* masterAddress, int listenPort)
-    : succeed_(true),
-      masterAddress_(masterAddress),
-      listenPort_(listenPort),
-      zombieInterval_(10)
+  bool valid() const
   {
+    return !(error_ || myName_.empty() || masterAddress_.empty());
   }
 
-  bool succeed_;
+  string myName_;
   string masterAddress_;
+  bool error_;
   int listenPort_;
   int zombieInterval_;
+  int heartbeatInterval_;
 };
 
 }
