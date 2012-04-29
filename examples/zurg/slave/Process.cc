@@ -32,6 +32,23 @@ float getSeconds(const struct timeval& tv)
   return static_cast<float>(seconds);
 }
 
+void setNonBlockAndCloseOnExec(int fd)
+{
+  // non-block
+  int flags = ::fcntl(fd, F_GETFL, 0);
+  flags |= O_NONBLOCK;
+  int ret = ::fcntl(fd, F_SETFL, flags);
+  // FIXME check
+
+  // close-on-exec
+  flags = ::fcntl(fd, F_GETFD, 0);
+  flags |= FD_CLOEXEC;
+  ret = ::fcntl(fd, F_SETFD, flags);
+  // FIXME check
+
+  (void)ret;
+}
+
 class Pipe : boost::noncopyable
 {
  public:
@@ -249,8 +266,12 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
     int stderrFd = ::dup(stdError.readFd());
     if (stdoutFd < 0 || stderrFd < 0)
     {
+      if (stdoutFd >= 0) ::close(stdoutFd);
+      if (stderrFd >= 0) ::close(stderrFd);
       return errno;
     }
+    setNonBlockAndCloseOnExec(stdoutFd);
+    setNonBlockAndCloseOnExec(stderrFd);
     stdoutSink_.reset(new Sink(loop_, stdoutFd, request_->max_stdout(), "stdout"));
     stderrSink_.reset(new Sink(loop_, stderrFd, request_->max_stderr(), "stderr"));
     stdoutSink_->start();
