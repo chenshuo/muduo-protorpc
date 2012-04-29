@@ -17,6 +17,8 @@ def encode(message):
 
 def decode(sock):
     head = sock.recv(4, socket.MSG_WAITALL)
+    if not head:
+        return None
     assert len(head) == 4
     length, = struct.unpack(">l", head)
     assert length > 8
@@ -47,9 +49,41 @@ class SyncRpcChannel(service.RpcChannel):
         wire = encode(message)
         self.sock.sendall(wire)
         responseMessage = decode(self.sock)
+        assert responseMessage.type == rpc_pb2.RESPONSE
+        assert responseMessage.id == message.id
         response = response_class()
         response.ParseFromString(responseMessage.response)
         return response
+
+class ServerRpcChannel(service.RpcChannel):
+    def __init__(self, port):
+        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.serversocket.bind(('', port))
+        self.serversocket.listen(5)
+
+    def serveOneClient(self, service):
+        (clientsocket, address) = self.serversocket.accept()
+        print "got connection from", address
+        while True:
+            message = decode(clientsocket)
+            if not message:
+                clientsocket.close()
+                break
+            assert message.type == rpc_pb2.REQUEST
+            assert message.service == service.GetDescriptor().full_name
+            method = service.GetDescriptor().FindMethodByName(message.method)
+            request_class = service.GetRequestClass(method)
+            request = request_class()
+            request.ParseFromString(message.request)
+            print request
+            response = service.CallMethod(method, None, request, None)
+            responseMessage = rpc_pb2.RpcMessage()
+            responseMessage.type = rpc_pb2.RESPONSE
+            responseMessage.id = message.id
+            responseMessage.response = response.SerializeToString()
+            wire = encode(responseMessage)
+            clientsocket.sendall(wire)
 
 if __name__ == "__main__":
     channel = SyncRpcChannel(sys.argv[1].split(':'))

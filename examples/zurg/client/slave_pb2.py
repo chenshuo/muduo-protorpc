@@ -13,8 +13,37 @@ from google.protobuf import descriptor_pb2
 DESCRIPTOR = descriptor.FileDescriptor(
   name='slave.proto',
   package='zurg',
-  serialized_pb='\n\x0bslave.proto\x12\x04zurg\"X\n\x15GetFileContentRequest\x12\x11\n\tfile_name\x18\x01 \x02(\t\x12\x19\n\x08max_size\x18\x02 \x01(\x05:\x07\x31\x30\x34\x38\x35\x37\x36\x12\x11\n\x06offset\x18\x03 \x01(\x03:\x01\x30\"P\n\x16GetFileContentResponse\x12\x12\n\nerror_code\x18\x01 \x02(\x05\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\x12\x11\n\tfile_size\x18\x03 \x01(\x03\"\xda\x01\n\x11RunCommandRequest\x12\x0f\n\x07\x63ommand\x18\x01 \x02(\t\x12\x11\n\x03\x63wd\x18\x02 \x01(\t:\x04/tmp\x12\x0c\n\x04\x61rgs\x18\x03 \x03(\t\x12\x0c\n\x04\x65nvs\x18\x04 \x03(\t\x12\x18\n\tenvs_only\x18\x05 \x01(\x08:\x05\x66\x61lse\x12\x1b\n\nmax_stdout\x18\x06 \x01(\x05:\x07\x31\x30\x34\x38\x35\x37\x36\x12\x1b\n\nmax_stderr\x18\x07 \x01(\x05:\x07\x31\x30\x34\x38\x35\x37\x36\x12\x13\n\x07timeout\x18\x08 \x01(\x05:\x02\x36\x30\x12\x1c\n\rmax_memory_mb\x18\t \x01(\x05:\x05\x33\x32\x37\x36\x38\"\xa3\x02\n\x12RunCommandResponse\x12\x12\n\nerror_code\x18\x01 \x02(\x05\x12\x0b\n\x03pid\x18\x02 \x01(\x05\x12\x0e\n\x06status\x18\x03 \x01(\x05\x12\x12\n\nstd_output\x18\x04 \x01(\x0c\x12\x11\n\tstd_error\x18\x05 \x01(\x0c\x12\x15\n\rstart_time_us\x18\x10 \x01(\x03\x12\x16\n\x0e\x66inish_time_us\x18\x11 \x01(\x03\x12\x11\n\tuser_time\x18\x12 \x01(\x02\x12\x13\n\x0bsystem_time\x18\x13 \x01(\x02\x12\x18\n\x10memory_maxrss_kb\x18\x14 \x01(\x03\x12\x16\n\x0b\x65xit_status\x18\x1e \x01(\x05:\x01\x30\x12\x13\n\x08signaled\x18\x1f \x01(\x05:\x01\x30\x12\x17\n\x08\x63oredump\x18  \x01(\x08:\x05\x66\x61lse\"\xc4\x01\n\x15\x41\x64\x64\x41pplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x12\n\nexecutable\x18\x02 \x02(\t\x12\x0c\n\x04\x61rgs\x18\x03 \x03(\t\x12\x0c\n\x04\x65nvs\x18\x04 \x03(\t\x12\x18\n\tenvs_only\x18\x05 \x01(\x08:\x05\x66\x61lse\x12\x1d\n\x0fredirect_stdout\x18\x06 \x01(\x08:\x04true\x12\x1d\n\x0fredirect_stderr\x18\x07 \x01(\x08:\x04true\x12\x15\n\x03\x63wd\x18\x08 \x01(\t:\x08/var/tmp\"\x18\n\x16\x41\x64\x64\x41pplicationResponse\"\'\n\x17StartApplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\"\x1a\n\x18StartApplicationResponse\"&\n\x16StopApplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\"\x19\n\x17StopApplicationResponse\"%\n\x15GetApplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\"\x18\n\x16GetApplicationResponse\"\x19\n\x17ListApplicationsRequest\"w\n\x18ListApplicationsResponse\x12\x46\n\x0c\x61pplications\x18\x02 \x03(\x0b\x32\x30.zurg.ListApplicationsResponse.ApplicationStatus\x1a\x13\n\x11\x41pplicationStatus\")\n\x19RemoveApplicationsRequest\x12\x0c\n\x04name\x18\x01 \x03(\t\"\x1c\n\x1aRemoveApplicationsResponse2\x85\x05\n\x0cSlaveService\x12K\n\x0egetFileContent\x12\x1b.zurg.GetFileContentRequest\x1a\x1c.zurg.GetFileContentResponse\x12?\n\nrunCommand\x12\x17.zurg.RunCommandRequest\x1a\x18.zurg.RunCommandResponse\x12K\n\x0e\x61\x64\x64\x41pplication\x12\x1b.zurg.AddApplicationRequest\x1a\x1c.zurg.AddApplicationResponse\x12Q\n\x10startApplication\x12\x1d.zurg.StartApplicationRequest\x1a\x1e.zurg.StartApplicationResponse\x12N\n\x0fstopApplication\x12\x1c.zurg.StopApplicationRequest\x1a\x1d.zurg.StopApplicationResponse\x12K\n\x0egetApplication\x12\x1b.zurg.GetApplicationRequest\x1a\x1c.zurg.GetApplicationResponse\x12Q\n\x10listApplications\x12\x1d.zurg.ListApplicationsRequest\x1a\x1e.zurg.ListApplicationsResponse\x12W\n\x12removeApplications\x12\x1f.zurg.RemoveApplicationsRequest\x1a .zurg.RemoveApplicationsResponseB4\n\x1d\x63om.chenshuo.muduo.zurg.protoB\nSlaveProto\x80\x01\x01\x88\x01\x01\x90\x01\x01')
+  serialized_pb='\n\x0bslave.proto\x12\x04zurg\"X\n\x15GetFileContentRequest\x12\x11\n\tfile_name\x18\x01 \x02(\t\x12\x19\n\x08max_size\x18\x02 \x01(\x05:\x07\x31\x30\x34\x38\x35\x37\x36\x12\x11\n\x06offset\x18\x03 \x01(\x03:\x01\x30\"P\n\x16GetFileContentResponse\x12\x12\n\nerror_code\x18\x01 \x02(\x05\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\x12\x11\n\tfile_size\x18\x03 \x01(\x03\"\xda\x01\n\x11RunCommandRequest\x12\x0f\n\x07\x63ommand\x18\x01 \x02(\t\x12\x11\n\x03\x63wd\x18\x02 \x01(\t:\x04/tmp\x12\x0c\n\x04\x61rgs\x18\x03 \x03(\t\x12\x0c\n\x04\x65nvs\x18\x04 \x03(\t\x12\x18\n\tenvs_only\x18\x05 \x01(\x08:\x05\x66\x61lse\x12\x1b\n\nmax_stdout\x18\x06 \x01(\x05:\x07\x31\x30\x34\x38\x35\x37\x36\x12\x1b\n\nmax_stderr\x18\x07 \x01(\x05:\x07\x31\x30\x34\x38\x35\x37\x36\x12\x13\n\x07timeout\x18\x08 \x01(\x05:\x02\x36\x30\x12\x1c\n\rmax_memory_mb\x18\t \x01(\x05:\x05\x33\x32\x37\x36\x38\"\xa3\x02\n\x12RunCommandResponse\x12\x12\n\nerror_code\x18\x01 \x02(\x05\x12\x0b\n\x03pid\x18\x02 \x01(\x05\x12\x0e\n\x06status\x18\x03 \x01(\x05\x12\x12\n\nstd_output\x18\x04 \x01(\x0c\x12\x11\n\tstd_error\x18\x05 \x01(\x0c\x12\x15\n\rstart_time_us\x18\x10 \x01(\x03\x12\x16\n\x0e\x66inish_time_us\x18\x11 \x01(\x03\x12\x11\n\tuser_time\x18\x12 \x01(\x02\x12\x13\n\x0bsystem_time\x18\x13 \x01(\x02\x12\x18\n\x10memory_maxrss_kb\x18\x14 \x01(\x03\x12\x16\n\x0b\x65xit_status\x18\x1e \x01(\x05:\x01\x30\x12\x13\n\x08signaled\x18\x1f \x01(\x05:\x01\x30\x12\x17\n\x08\x63oredump\x18  \x01(\x08:\x05\x66\x61lse\"\xc4\x01\n\x15\x41\x64\x64\x41pplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x12\n\nexecutable\x18\x02 \x02(\t\x12\x0c\n\x04\x61rgs\x18\x03 \x03(\t\x12\x0c\n\x04\x65nvs\x18\x04 \x03(\t\x12\x18\n\tenvs_only\x18\x05 \x01(\x08:\x05\x66\x61lse\x12\x1d\n\x0fredirect_stdout\x18\x06 \x01(\x08:\x04true\x12\x1d\n\x0fredirect_stderr\x18\x07 \x01(\x08:\x04true\x12\x15\n\x03\x63wd\x18\x08 \x01(\t:\x08/var/tmp\"\x18\n\x16\x41\x64\x64\x41pplicationResponse\"\'\n\x17StartApplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\"\x1a\n\x18StartApplicationResponse\"&\n\x16StopApplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\"\x19\n\x17StopApplicationResponse\"%\n\x15GetApplicationRequest\x12\x0c\n\x04name\x18\x01 \x02(\t\"\xd2\x01\n\x0f\x41pplicationInfo\x12\'\n\x06status\x18\x01 \x01(\x0e\x32\x17.zurg.ApplicationStatus\x12\x0b\n\x03pid\x18\x02 \x01(\x05\x12\x15\n\rstart_time_us\x18\n \x01(\x03\x12\x19\n\x11last_stop_time_us\x18\x0b \x01(\x03\x12\x0f\n\x07threads\x18\x0c \x01(\x05\x12\x18\n\x10last_exit_status\x18\x1e \x01(\x05\x12\x15\n\rlast_signaled\x18\x1f \x01(\x05\x12\x15\n\rlast_coredump\x18  \x01(\x08\"A\n\x16GetApplicationResponse\x12\'\n\x08\x61pp_info\x18\x01 \x02(\x0b\x32\x15.zurg.ApplicationInfo\"\x19\n\x17ListApplicationsRequest\"G\n\x18ListApplicationsResponse\x12+\n\x0c\x61pplications\x18\x02 \x03(\x0b\x32\x15.zurg.ApplicationInfo\")\n\x19RemoveApplicationsRequest\x12\x0c\n\x04name\x18\x01 \x03(\t\"\x1c\n\x1aRemoveApplicationsResponse*<\n\x11\x41pplicationStatus\x12\x0c\n\x08kUnknown\x10\x00\x12\x0c\n\x08kRunning\x10\x01\x12\x0b\n\x07kExited\x10\x02\x32\x85\x05\n\x0cSlaveService\x12K\n\x0egetFileContent\x12\x1b.zurg.GetFileContentRequest\x1a\x1c.zurg.GetFileContentResponse\x12?\n\nrunCommand\x12\x17.zurg.RunCommandRequest\x1a\x18.zurg.RunCommandResponse\x12K\n\x0e\x61\x64\x64\x41pplication\x12\x1b.zurg.AddApplicationRequest\x1a\x1c.zurg.AddApplicationResponse\x12Q\n\x10startApplication\x12\x1d.zurg.StartApplicationRequest\x1a\x1e.zurg.StartApplicationResponse\x12N\n\x0fstopApplication\x12\x1c.zurg.StopApplicationRequest\x1a\x1d.zurg.StopApplicationResponse\x12K\n\x0egetApplication\x12\x1b.zurg.GetApplicationRequest\x1a\x1c.zurg.GetApplicationResponse\x12Q\n\x10listApplications\x12\x1d.zurg.ListApplicationsRequest\x1a\x1e.zurg.ListApplicationsResponse\x12W\n\x12removeApplications\x12\x1f.zurg.RemoveApplicationsRequest\x1a .zurg.RemoveApplicationsResponseB4\n\x1d\x63om.chenshuo.muduo.zurg.protoB\nSlaveProto\x80\x01\x01\x88\x01\x01\x90\x01\x01')
 
+_APPLICATIONSTATUS = descriptor.EnumDescriptor(
+  name='ApplicationStatus',
+  full_name='zurg.ApplicationStatus',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    descriptor.EnumValueDescriptor(
+      name='kUnknown', index=0, number=0,
+      options=None,
+      type=None),
+    descriptor.EnumValueDescriptor(
+      name='kRunning', index=1, number=1,
+      options=None,
+      type=None),
+    descriptor.EnumValueDescriptor(
+      name='kExited', index=2, number=2,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=1561,
+  serialized_end=1621,
+)
+
+
+kUnknown = 0
+kRunning = 1
+kExited = 2
 
 
 
@@ -522,13 +551,69 @@ _GETAPPLICATIONREQUEST = descriptor.Descriptor(
 )
 
 
-_GETAPPLICATIONRESPONSE = descriptor.Descriptor(
-  name='GetApplicationResponse',
-  full_name='zurg.GetApplicationResponse',
+_APPLICATIONINFO = descriptor.Descriptor(
+  name='ApplicationInfo',
+  full_name='zurg.ApplicationInfo',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
+    descriptor.FieldDescriptor(
+      name='status', full_name='zurg.ApplicationInfo.status', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='pid', full_name='zurg.ApplicationInfo.pid', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='start_time_us', full_name='zurg.ApplicationInfo.start_time_us', index=2,
+      number=10, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='last_stop_time_us', full_name='zurg.ApplicationInfo.last_stop_time_us', index=3,
+      number=11, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='threads', full_name='zurg.ApplicationInfo.threads', index=4,
+      number=12, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='last_exit_status', full_name='zurg.ApplicationInfo.last_exit_status', index=5,
+      number=30, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='last_signaled', full_name='zurg.ApplicationInfo.last_signaled', index=6,
+      number=31, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='last_coredump', full_name='zurg.ApplicationInfo.last_coredump', index=7,
+      number=32, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -538,8 +623,36 @@ _GETAPPLICATIONRESPONSE = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1108,
-  serialized_end=1132,
+  serialized_start=1109,
+  serialized_end=1319,
+)
+
+
+_GETAPPLICATIONRESPONSE = descriptor.Descriptor(
+  name='GetApplicationResponse',
+  full_name='zurg.GetApplicationResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    descriptor.FieldDescriptor(
+      name='app_info', full_name='zurg.GetApplicationResponse.app_info', index=0,
+      number=1, type=11, cpp_type=10, label=2,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  extension_ranges=[],
+  serialized_start=1321,
+  serialized_end=1386,
 )
 
 
@@ -559,30 +672,10 @@ _LISTAPPLICATIONSREQUEST = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1134,
-  serialized_end=1159,
+  serialized_start=1388,
+  serialized_end=1413,
 )
 
-
-_LISTAPPLICATIONSRESPONSE_APPLICATIONSTATUS = descriptor.Descriptor(
-  name='ApplicationStatus',
-  full_name='zurg.ListApplicationsResponse.ApplicationStatus',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  extension_ranges=[],
-  serialized_start=1261,
-  serialized_end=1280,
-)
 
 _LISTAPPLICATIONSRESPONSE = descriptor.Descriptor(
   name='ListApplicationsResponse',
@@ -601,14 +694,14 @@ _LISTAPPLICATIONSRESPONSE = descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[_LISTAPPLICATIONSRESPONSE_APPLICATIONSTATUS, ],
+  nested_types=[],
   enum_types=[
   ],
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1161,
-  serialized_end=1280,
+  serialized_start=1415,
+  serialized_end=1486,
 )
 
 
@@ -635,8 +728,8 @@ _REMOVEAPPLICATIONSREQUEST = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1282,
-  serialized_end=1323,
+  serialized_start=1488,
+  serialized_end=1529,
 )
 
 
@@ -656,12 +749,13 @@ _REMOVEAPPLICATIONSRESPONSE = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1325,
-  serialized_end=1353,
+  serialized_start=1531,
+  serialized_end=1559,
 )
 
-_LISTAPPLICATIONSRESPONSE_APPLICATIONSTATUS.containing_type = _LISTAPPLICATIONSRESPONSE;
-_LISTAPPLICATIONSRESPONSE.fields_by_name['applications'].message_type = _LISTAPPLICATIONSRESPONSE_APPLICATIONSTATUS
+_APPLICATIONINFO.fields_by_name['status'].enum_type = _APPLICATIONSTATUS
+_GETAPPLICATIONRESPONSE.fields_by_name['app_info'].message_type = _APPLICATIONINFO
+_LISTAPPLICATIONSRESPONSE.fields_by_name['applications'].message_type = _APPLICATIONINFO
 DESCRIPTOR.message_types_by_name['GetFileContentRequest'] = _GETFILECONTENTREQUEST
 DESCRIPTOR.message_types_by_name['GetFileContentResponse'] = _GETFILECONTENTRESPONSE
 DESCRIPTOR.message_types_by_name['RunCommandRequest'] = _RUNCOMMANDREQUEST
@@ -673,6 +767,7 @@ DESCRIPTOR.message_types_by_name['StartApplicationResponse'] = _STARTAPPLICATION
 DESCRIPTOR.message_types_by_name['StopApplicationRequest'] = _STOPAPPLICATIONREQUEST
 DESCRIPTOR.message_types_by_name['StopApplicationResponse'] = _STOPAPPLICATIONRESPONSE
 DESCRIPTOR.message_types_by_name['GetApplicationRequest'] = _GETAPPLICATIONREQUEST
+DESCRIPTOR.message_types_by_name['ApplicationInfo'] = _APPLICATIONINFO
 DESCRIPTOR.message_types_by_name['GetApplicationResponse'] = _GETAPPLICATIONRESPONSE
 DESCRIPTOR.message_types_by_name['ListApplicationsRequest'] = _LISTAPPLICATIONSREQUEST
 DESCRIPTOR.message_types_by_name['ListApplicationsResponse'] = _LISTAPPLICATIONSRESPONSE
@@ -745,6 +840,12 @@ class GetApplicationRequest(message.Message):
   
   # @@protoc_insertion_point(class_scope:zurg.GetApplicationRequest)
 
+class ApplicationInfo(message.Message):
+  __metaclass__ = reflection.GeneratedProtocolMessageType
+  DESCRIPTOR = _APPLICATIONINFO
+  
+  # @@protoc_insertion_point(class_scope:zurg.ApplicationInfo)
+
 class GetApplicationResponse(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _GETAPPLICATIONRESPONSE
@@ -759,12 +860,6 @@ class ListApplicationsRequest(message.Message):
 
 class ListApplicationsResponse(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
-  
-  class ApplicationStatus(message.Message):
-    __metaclass__ = reflection.GeneratedProtocolMessageType
-    DESCRIPTOR = _LISTAPPLICATIONSRESPONSE_APPLICATIONSTATUS
-    
-    # @@protoc_insertion_point(class_scope:zurg.ListApplicationsResponse.ApplicationStatus)
   DESCRIPTOR = _LISTAPPLICATIONSRESPONSE
   
   # @@protoc_insertion_point(class_scope:zurg.ListApplicationsResponse)
@@ -788,8 +883,8 @@ _SLAVESERVICE = descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=1356,
-  serialized_end=2001,
+  serialized_start=1624,
+  serialized_end=2269,
   methods=[
   descriptor.MethodDescriptor(
     name='getFileContent',

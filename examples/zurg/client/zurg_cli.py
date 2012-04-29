@@ -4,6 +4,7 @@ import sys
 
 import rpc
 import slave_pb2
+import master_pb2
 
 def main(addr):
     channel = rpc.SyncRpcChannel(addr.split(':'))
@@ -16,6 +17,16 @@ def main(addr):
     print response
     print response.finish_time_us - response.start_time_us
 
+def main2(addr):
+    channel = rpc.SyncRpcChannel(addr.split(':'))
+    master = master_pb2.MasterService_Stub(channel)
+    request = master_pb2.SlaveHeartbeat()
+    request.slave_name = 'sleep'
+    request.host_name = 'atom'
+    request.slave_pid = 123
+    request.start_time = 5
+    response = master.slaveHeartbeat(None, request)
+    print response
 
 if __name__ == "__main__":
     main(sys.argv[1])
