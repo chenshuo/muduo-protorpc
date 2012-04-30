@@ -9,11 +9,12 @@ from google.protobuf import descriptor_pb2
 # @@protoc_insertion_point(imports)
 
 
+import muduo.protorpc2.rpc2_pb2
 
 DESCRIPTOR = descriptor.FileDescriptor(
   name='master.proto',
   package='zurg',
-  serialized_pb='\n\x0cmaster.proto\x12\x04zurg\"s\n\x0eSlaveHeartbeat\x12\x12\n\nslave_name\x18\x01 \x02(\t\x12\x11\n\thost_name\x18\x02 \x02(\t\x12\x11\n\tslave_pid\x18\x03 \x02(\x05\x12\x12\n\nstart_time\x18\x04 \x02(\x03\x12\x13\n\x0blisten_port\x18\x14 \x01(\x05\"\x07\n\x05\x45mpty2D\n\rMasterService\x12\x33\n\x0eslaveHeartbeat\x12\x14.zurg.SlaveHeartbeat\x1a\x0b.zurg.EmptyB5\n\x1d\x63om.chenshuo.muduo.zurg.protoB\x0bMasterProto\x80\x01\x01\x88\x01\x01\x90\x01\x01')
+  serialized_pb='\n\x0cmaster.proto\x12\x04zurg\x1a\x1amuduo/protorpc2/rpc2.proto\"\x8c\x01\n\x0eSlaveHeartbeat\x12\x12\n\nslave_name\x18\x01 \x02(\t\x12\x14\n\x0csend_time_us\x18\x02 \x02(\x03\x12\x11\n\thost_name\x18\x14 \x01(\t\x12\x13\n\x0blisten_port\x18\x15 \x01(\x05\x12\x11\n\tslave_pid\x18\x16 \x01(\x05\x12\x15\n\rstart_time_us\x18\x17 \x01(\x03\x32I\n\rMasterService\x12\x38\n\x0eslaveHeartbeat\x12\x14.zurg.SlaveHeartbeat\x1a\x0b.rpc2.Empty\"\x03\xc0\x45\x01\x42\x35\n\x1d\x63om.chenshuo.muduo.zurg.protoB\x0bMasterProto\x80\x01\x01\x88\x01\x01\x90\x01\x01')
 
 
 
@@ -33,29 +34,36 @@ _SLAVEHEARTBEAT = descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     descriptor.FieldDescriptor(
-      name='host_name', full_name='zurg.SlaveHeartbeat.host_name', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      name='send_time_us', full_name='zurg.SlaveHeartbeat.send_time_us', index=1,
+      number=2, type=3, cpp_type=2, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='host_name', full_name='zurg.SlaveHeartbeat.host_name', index=2,
+      number=20, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=unicode("", "utf-8"),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     descriptor.FieldDescriptor(
-      name='slave_pid', full_name='zurg.SlaveHeartbeat.slave_pid', index=2,
-      number=3, type=5, cpp_type=1, label=2,
+      name='listen_port', full_name='zurg.SlaveHeartbeat.listen_port', index=3,
+      number=21, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     descriptor.FieldDescriptor(
-      name='start_time', full_name='zurg.SlaveHeartbeat.start_time', index=3,
-      number=4, type=3, cpp_type=2, label=2,
+      name='slave_pid', full_name='zurg.SlaveHeartbeat.slave_pid', index=4,
+      number=22, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     descriptor.FieldDescriptor(
-      name='listen_port', full_name='zurg.SlaveHeartbeat.listen_port', index=4,
-      number=20, type=5, cpp_type=1, label=1,
+      name='start_time_us', full_name='zurg.SlaveHeartbeat.start_time_us', index=5,
+      number=23, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -69,45 +77,17 @@ _SLAVEHEARTBEAT = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=22,
-  serialized_end=137,
-)
-
-
-_EMPTY = descriptor.Descriptor(
-  name='Empty',
-  full_name='zurg.Empty',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  extension_ranges=[],
-  serialized_start=139,
-  serialized_end=146,
+  serialized_start=51,
+  serialized_end=191,
 )
 
 DESCRIPTOR.message_types_by_name['SlaveHeartbeat'] = _SLAVEHEARTBEAT
-DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
 
 class SlaveHeartbeat(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _SLAVEHEARTBEAT
   
   # @@protoc_insertion_point(class_scope:zurg.SlaveHeartbeat)
-
-class Empty(message.Message):
-  __metaclass__ = reflection.GeneratedProtocolMessageType
-  DESCRIPTOR = _EMPTY
-  
-  # @@protoc_insertion_point(class_scope:zurg.Empty)
 
 
 _MASTERSERVICE = descriptor.ServiceDescriptor(
@@ -116,8 +96,8 @@ _MASTERSERVICE = descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=148,
-  serialized_end=216,
+  serialized_start=193,
+  serialized_end=266,
   methods=[
   descriptor.MethodDescriptor(
     name='slaveHeartbeat',
@@ -125,8 +105,8 @@ _MASTERSERVICE = descriptor.ServiceDescriptor(
     index=0,
     containing_service=None,
     input_type=_SLAVEHEARTBEAT,
-    output_type=_EMPTY,
-    options=None,
+    output_type=muduo.protorpc2.rpc2_pb2._EMPTY,
+    options=descriptor._ParseOptions(descriptor_pb2.MethodOptions(), '\300E\001'),
   ),
 ])
 

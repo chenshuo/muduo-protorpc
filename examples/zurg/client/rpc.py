@@ -76,7 +76,6 @@ class ServerRpcChannel(service.RpcChannel):
             request_class = service.GetRequestClass(method)
             request = request_class()
             request.ParseFromString(message.request)
-            print request
             response = service.CallMethod(method, None, request, None)
             responseMessage = rpc_pb2.RpcMessage()
             responseMessage.type = rpc_pb2.RESPONSE
@@ -84,6 +83,7 @@ class ServerRpcChannel(service.RpcChannel):
             responseMessage.response = response.SerializeToString()
             wire = encode(responseMessage)
             clientsocket.sendall(wire)
+        print "connection is down", address
 
 if __name__ == "__main__":
     channel = SyncRpcChannel(sys.argv[1].split(':'))
