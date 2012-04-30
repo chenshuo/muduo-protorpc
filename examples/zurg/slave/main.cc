@@ -29,7 +29,7 @@ SlaveConfig parseCommandLine(int argc, char* argv[])
         config.listenPort_ = atoi(optarg);
         break;
       case 'n':
-        config.myName_ = optarg;
+        config.name_ = optarg;
         break;
       default:
         config.error_ = true;

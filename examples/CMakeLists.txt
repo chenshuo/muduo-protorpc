@@ -13,7 +13,7 @@ function(PROTOBUF_GENERATE_RPC SRCS)
     add_custom_command(
       OUTPUT "${FIL_WE}.pb.cc" "${FIL_WE}.pb.h"
       COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
-      ARGS --plugin=${PROJECT_BINARY_DIR}/bin/protoc-gen-rpc --rpc_out . ${CMAKE_CURRENT_SOURCE_DIR}/${FIL} -I${CMAKE_CURRENT_SOURCE_DIR}
+      ARGS --plugin=${PROJECT_BINARY_DIR}/bin/protoc-gen-rpc --rpc_out . ${CMAKE_CURRENT_SOURCE_DIR}/${FIL} -I${CMAKE_CURRENT_SOURCE_DIR} -I${PROJECT_SOURCE_DIR} -I${PROTOBUF_INCLUDE_DIR}
       COMMAND sed
       ARGS -i "s/#include <google\\/protobuf\\/service.h>/#include <muduo\\/protorpc2\\/service.h>/" ${FIL_WE}.pb.h
       MAIN_DEPENDENCY ${FIL}

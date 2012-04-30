@@ -19,10 +19,10 @@ struct SlaveConfig
 
   bool valid() const
   {
-    return !(error_ || myName_.empty() || masterAddress_.empty());
+    return !(error_ || name_.empty() || masterAddress_.empty());
   }
 
-  string myName_;
+  std::string name_;
   string masterAddress_;
   bool error_;
   int listenPort_;

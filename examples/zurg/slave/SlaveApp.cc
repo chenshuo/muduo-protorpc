@@ -1,6 +1,6 @@
 #include <examples/zurg/slave/SlaveApp.h>
 
-#include <examples/zurg/slave/Heartbeat.h>
+#include <examples/zurg/slave/RpcClient.h>
 #include <examples/zurg/slave/SlaveConfig.h>
 #include <examples/zurg/slave/SlaveService.h>
 
@@ -10,28 +10,14 @@
 
 #include <assert.h>
 
-namespace zurg
-{
-
-class RpcClient : boost::noncopyable
-{
- public:
-  RpcClient(muduo::net::EventLoop* loop, const muduo::string& masterAddr)
-  {
-  }
-};
-
-}
-
 using namespace zurg;
 using namespace muduo::net;
 
 SlaveApp::SlaveApp(const SlaveConfig& config)
   : loop_(),
     config_(config),
-    rpcClient_(new RpcClient(&loop_, config.masterAddress_)),
-    service_(new SlaveServiceImpl(&loop_, config.zombieInterval_)),
-    heartbeat_(new Heartbeat)
+    rpcClient_(new RpcClient(&loop_, config)),
+    service_(new SlaveServiceImpl(&loop_, config.zombieInterval_))
 {
   assert(config.valid());
 
@@ -43,8 +29,6 @@ SlaveApp::SlaveApp(const SlaveConfig& config)
     server_->registerService(get_pointer(service_));
     LOG_INFO << "Listen on port " << listenAddress.toIpPort();
   }
-
-  // FIXME: connect to master
 }
 
 SlaveApp::~SlaveApp()
@@ -53,11 +37,12 @@ SlaveApp::~SlaveApp()
 
 void SlaveApp::run()
 {
+  rpcClient_->connect();
   service_->start();
-  heartbeat_->start();
   if (server_)
   {
     server_->start();
   }
   loop_.loop();
 }
+
