@@ -179,6 +179,8 @@ class RpcChannel : boost::noncopyable
     CallMethod(method, request, response, boost::bind(&downcastcall<Output>, done, _1));
   }
 
+  void onDisconnect();
+
   void onMessage(const TcpConnectionPtr& conn,
                  Buffer* buf,
                  Timestamp receiveTime);
@@ -206,7 +208,7 @@ class RpcChannel : boost::noncopyable
 
   const ServiceMap* services_;
 };
-typedef boost::shared_ptr<RpcChannel> RpcChannelPtr;
+typedef boost::shared_ptr<RpcChannel> RpcChannelPtr; // FIXME: unique_ptr
 
 }
 }

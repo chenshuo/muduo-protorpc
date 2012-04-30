@@ -1,0 +1,16 @@
+package rpc2;
+
+option java_package = "com.chenshuo.muduo.protorpc";
+option java_outer_classname = "Rpc2Proto";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MethodOptions
+{
+  optional bool idempotent = 1111;
+  optional bool noreturn = 1112;
+}
+
+message Empty
+{
+}

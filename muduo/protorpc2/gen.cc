@@ -165,6 +165,7 @@ void ServiceGenerator::GenerateMethodSignatures(
     sub_vars["name"] = method->name();
     sub_vars["input_type"] = ClassName(method->input_type(), true);
     sub_vars["output_type"] = ClassName(method->output_type(), true);
+    sub_vars["output_typedef"] = ClassName(method->output_type(), false);
     sub_vars["virtual"] = "virtual ";
 
     if (stub_or_non == NON_STUB) {
@@ -176,7 +177,7 @@ void ServiceGenerator::GenerateMethodSignatures(
       printer->Print(sub_vars,
         "using $classname$::$name$;\n"
         "$virtual$void $name$(const $input_type$& request,\n"
-        "                     const ::boost::function1<void, const $output_type$Ptr&>& done);\n");
+        "                     const ::boost::function1<void, const $output_typedef$Ptr&>& done);\n");
     }
   }
 }
@@ -343,10 +344,11 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
     sub_vars["index"] = SimpleItoa(i);
     sub_vars["input_type"] = ClassName(method->input_type(), true);
     sub_vars["output_type"] = ClassName(method->output_type(), true);
+    sub_vars["output_typedef"] = ClassName(method->output_type(), false);
 
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
-      "                              const ::boost::function1<void, const $output_type$Ptr&>& done) {\n"
+      "                              const ::boost::function1<void, const $output_typedef$Ptr&>& done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       request, &$output_type$::default_instance(), done);\n"
       "}\n");

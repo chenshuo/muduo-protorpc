@@ -79,6 +79,11 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   outstandings_[id] = out;
 }
 
+void RpcChannel::onDisconnect()
+{
+  //FIXME:
+}
+
 void RpcChannel::onMessage(const TcpConnectionPtr& conn,
                            Buffer* buf,
                            Timestamp receiveTime)
