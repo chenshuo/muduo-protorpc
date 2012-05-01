@@ -1,3 +1,4 @@
 *.swp
 *.pyc
+*_pb2.py
 java/target/
