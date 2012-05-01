@@ -117,6 +117,8 @@ void Heartbeat::beat(bool showStatic)
   FILL_HB("/proc/stat", proc_stat);
   FILL_HB("/proc/loadavg", loadavg);
   FILL_HB("/proc/diskstats", diskstats);
+  FILL_HB("/proc/net/dev", net_dev);
+  FILL_HB("/proc/net/tcp", net_tcp);
 
   stub_->slaveHeartbeat(hb, ignoreCallback);
 }

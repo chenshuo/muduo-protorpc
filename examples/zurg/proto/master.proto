@@ -29,6 +29,8 @@ message SlaveHeartbeat {
   optional string proc_stat = 41;
   optional string loadavg = 42;
   optional string diskstats = 43;
+  optional string net_dev = 44;
+  optional string net_tcp = 45;
 }
 
 service MasterService {
