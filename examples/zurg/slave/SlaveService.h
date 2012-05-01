@@ -17,6 +17,7 @@ class EventLoop;
 namespace zurg
 {
 
+class AppManager;
 class ChildManager;
 
 class SlaveServiceImpl : public SlaveService
@@ -44,7 +45,7 @@ class SlaveServiceImpl : public SlaveService
                          const RpcDoneCallback& done);
 
   virtual void addApplication(const AddApplicationRequestPtr& request,
-                              const AddApplicationResponse* responsePrototype,
+                              const ApplicationStatus* responsePrototype,
                               const RpcDoneCallback& done);
 
   virtual void startApplication(const StartApplicationRequestPtr& request,
@@ -57,6 +58,7 @@ class SlaveServiceImpl : public SlaveService
 
  private:
   muduo::net::EventLoop* loop_;
+  boost::scoped_ptr<AppManager> apps_;
   boost::scoped_ptr<ChildManager> children_;
 };
 

@@ -37,7 +37,8 @@ class Heartbeat : boost::noncopyable
   void beat(bool showStatic);
 
   muduo::net::EventLoop* loop_;
-  std::string name_;
+  const std::string name_;
+  const int port_;
   MasterService_Stub* stub_;
   boost::scoped_ptr<ProcFs> procFs_;
   bool beating_;

@@ -1,5 +1,6 @@
 #include <examples/zurg/slave/SlaveService.h>
 
+#include <examples/zurg/slave/AppManager.h>
 #include <examples/zurg/slave/ChildManager.h>
 #include <examples/zurg/slave/GetHardwareTask.h>
 #include <examples/zurg/slave/Process.h>
@@ -17,6 +18,7 @@ using namespace zurg;
 
 SlaveServiceImpl::SlaveServiceImpl(EventLoop* loop, int zombieInterval)
   : loop_(loop),
+    apps_(new AppManager),
     children_(new ChildManager(loop_, zombieInterval))
 {
 }
@@ -111,9 +113,10 @@ void SlaveServiceImpl::runScript(const RunScriptRequestPtr& request,
 }
 
 void SlaveServiceImpl::addApplication(const AddApplicationRequestPtr& request,
-                              const AddApplicationResponse* responsePrototype,
-                              const RpcDoneCallback& done)
+                                      const ApplicationStatus* responsePrototype,
+                                      const RpcDoneCallback& done)
 {
+  apps_->add(request, done);
 }
 
 void SlaveServiceImpl::startApplication(const StartApplicationRequestPtr& request,

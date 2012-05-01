@@ -62,6 +62,7 @@ Heartbeat::Heartbeat(muduo::net::EventLoop* loop,
                      MasterService_Stub* stub)
   : loop_(loop),
     name_(config.name_),
+    port_(config.listenPort_),
     stub_(stub),
     procFs_(new ProcFs),
     beating_(false)
@@ -104,6 +105,10 @@ void Heartbeat::beat(bool showStatic)
   if (showStatic)
   {
     hb.set_host_name(ProcessInfo::hostname().c_str());
+    if (port_ > 0)
+    {
+      hb.set_listen_port(port_);
+    }
     hb.set_slave_pid(ProcessInfo::pid());
     hb.set_start_time_us(ProcessInfo::startTime().microSecondsSinceEpoch());
     hb.set_slave_version(slave_version);

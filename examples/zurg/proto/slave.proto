@@ -79,18 +79,16 @@ message RunScriptRequest {
 
 message AddApplicationRequest {
   required string name = 1;
-  required string executable = 2;
+  required string binary = 2;
   repeated string args = 3;
   repeated string envs = 4;
   optional bool envs_only = 5 [default = false];
   optional bool redirect_stdout = 6 [default = true];
   optional bool redirect_stderr = 7 [default = true];
   optional string cwd = 8 [default = "/var/tmp"];
-}
 
-message AddApplicationResponse {
-  optional bytes file_size = 9;
-  optional bytes md5sum = 10;
+  optional string md5sum_file = 20;
+  optional string md5sum_hex = 21;
 }
 
 message StartApplicationRequest {
@@ -111,14 +109,15 @@ message GetApplicationRequest {
   required string name = 1;
 }
 
-enum ApplicationStatus {
+enum ApplicationState {
   kUnknown = 0;
-  kRunning = 1;
-  kExited = 2;
+  kNewApp = 1;
+  kRunning = 2;
+  kExited = 3;
 }
 
-message ApplicationInfo {
-  required ApplicationStatus status = 1;
+message ApplicationStatus {
+  required ApplicationState state = 1 [default = kUnknown];
   required string name = 2;
   optional int32 pid = 3;
 
@@ -132,7 +131,7 @@ message ApplicationInfo {
 }
 
 message GetApplicationResponse {
-  required ApplicationInfo app_info = 1;
+  required ApplicationStatus status = 1;
 }
 
 message ListApplicationsRequest {
@@ -140,7 +139,7 @@ message ListApplicationsRequest {
 
 message ListApplicationsResponse {
 
-  repeated ApplicationInfo applications = 2;
+  repeated ApplicationStatus applications = 2;
 }
 
 message RemoveApplicationsRequest {
@@ -160,7 +159,7 @@ service SlaveService {
   rpc runScript (RunScriptRequest)
     returns (RunCommandResponse);
   rpc addApplication (AddApplicationRequest)
-    returns (AddApplicationResponse);
+    returns (ApplicationStatus);
   rpc startApplication (StartApplicationRequest)
     returns (StartApplicationResponse);
   rpc stopApplication (StopApplicationRequest)

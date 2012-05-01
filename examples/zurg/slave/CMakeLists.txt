@@ -5,6 +5,7 @@ execute_process(COMMAND echo "const char* slave_version =" \"${build_time}\" ";"
   )
 
 add_executable(zurg_slave main.cc
+  AppManager.cc
   ChildManager.cc
   Heartbeat.cc
   Process.cc

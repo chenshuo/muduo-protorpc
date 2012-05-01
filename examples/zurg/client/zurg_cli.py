@@ -47,6 +47,15 @@ def getHardware(addr):
     print response.lshw
     print response.ifconfig
 
+def addApplication(addr):
+    channel = rpc.SyncRpcChannel(addr.split(':'))
+    slave = slave_pb2.SlaveService_Stub(channel)
+    request = slave_pb2.AddApplicationRequest()
+    request.name = 'xyz'
+    request.binary = ''
+    response = slave.addApplication(None, request)
+    print response
+
 def main2(addr):
     channel = rpc.SyncRpcChannel(addr.split(':'))
     master = master_pb2.MasterService_Stub(channel)
@@ -59,4 +68,4 @@ def main2(addr):
     print response
 
 if __name__ == "__main__":
-    runScript(sys.argv[1])
+    addApplication(sys.argv[1])
