@@ -57,18 +57,18 @@ class GetHardwareTask : public boost::enable_shared_from_this<GetHardwareTask>,
 
  private:
 
-#define DEFINE_DONE(KEY)                        \
-  void KEY##Done(const google::protobuf::Message* message)                      \
-  {                                             \
-    assert(KEY##Done_ == false);                \
-    KEY##Done_ = true;                          \
-    const zurg::RunCommandResponse* out =       \
+#define DEFINE_DONE(KEY)                                        \
+  void KEY##Done(const google::protobuf::Message* message)      \
+  {                                                             \
+    assert(KEY##Done_ == false);                                \
+    KEY##Done_ = true;                                          \
+    const zurg::RunCommandResponse* out =                       \
       google::protobuf::down_cast<const zurg::RunCommandResponse*>(message);    \
-    if (out->error_code() == 0)                 \
-    {                                           \
-      resp_.set_##KEY(out->std_output());       \
-    }                                           \
-    checkAllDone();                             \
+    if (out->error_code() == 0)                                 \
+    {                                                           \
+      resp_.set_##KEY(out->std_output());                       \
+    }                                                           \
+    checkAllDone();                                             \
   }
 
   DEFINE_DONE(lspci)
@@ -84,7 +84,7 @@ class GetHardwareTask : public boost::enable_shared_from_this<GetHardwareTask>,
     bool allDone = lspciDone_ && lscpuDone_ && ifconfigDone_ && (lshw_ == false || lshwDone_);
     if (allDone)
     {
-      LOG_INFO << "all done";
+      LOG_INFO << "GetHardwareTask all done";
       done_(&resp_);
     }
   }

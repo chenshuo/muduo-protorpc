@@ -39,6 +39,22 @@ class SlaveServiceImpl : public SlaveService
                           const RunCommandResponse* responsePrototype,
                           const RpcDoneCallback& done);
 
+  virtual void runScript(const RunScriptRequestPtr& request,
+                         const RunCommandResponse* responsePrototype,
+                         const RpcDoneCallback& done);
+
+  virtual void addApplication(const AddApplicationRequestPtr& request,
+                              const AddApplicationResponse* responsePrototype,
+                              const RpcDoneCallback& done);
+
+  virtual void startApplication(const StartApplicationRequestPtr& request,
+                                const StartApplicationResponse* responsePrototype,
+                                const RpcDoneCallback& done);
+
+  virtual void stopApplication(const StopApplicationRequestPtr& request,
+                               const StopApplicationResponse* responsePrototype,
+                               const RpcDoneCallback& done);
+
  private:
   muduo::net::EventLoop* loop_;
   boost::scoped_ptr<ChildManager> children_;

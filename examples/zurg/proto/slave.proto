@@ -27,6 +27,8 @@ message GetFileContentResponse {
   required int32 error_code = 1;
   optional bytes content = 2;
   optional int64 file_size = 3;
+  optional int64 modify_time = 4;
+  optional int64 create_time = 5;
 }
 
 message RunCommandRequest {
@@ -61,6 +63,20 @@ message RunCommandResponse {
   optional bool coredump = 32 [default = false];
 }
 
+message RunScriptRequest {
+  required bytes script = 1;
+  optional string cwd = 2 [default = "/tmp"];
+  repeated string args = 3;
+  repeated string envs = 4;
+  optional bool envs_only = 5 [default = false];
+  optional int32 max_stdout = 6 [default = 1048576];
+  optional int32 max_stderr = 7 [default = 1048576];
+  optional int32 timeout = 8 [default = 60];
+  optional int32 max_memory_mb = 9 [default = 32768];
+  optional string interpreter = 10;
+  repeated string interpreter_args = 11;
+}
+
 message AddApplicationRequest {
   required string name = 1;
   required string executable = 2;
@@ -73,6 +89,8 @@ message AddApplicationRequest {
 }
 
 message AddApplicationResponse {
+  optional bytes file_size = 9;
+  optional bytes md5sum = 10;
 }
 
 message StartApplicationRequest {
@@ -138,6 +156,8 @@ service SlaveService {
   rpc getFileContent (GetFileContentRequest)
     returns (GetFileContentResponse);
   rpc runCommand (RunCommandRequest)
+    returns (RunCommandResponse);
+  rpc runScript (RunScriptRequest)
     returns (RunCommandResponse);
   rpc addApplication (AddApplicationRequest)
     returns (AddApplicationResponse);

@@ -6,6 +6,14 @@ import rpc
 import slave_pb2
 import master_pb2
 
+def getFile(addr):
+    channel = rpc.SyncRpcChannel(addr.split(':'))
+    slave = slave_pb2.SlaveService_Stub(channel)
+    request = slave_pb2.GetFileContentRequest()
+    request.file_name = '/etc/issue'
+    response = slave.getFileContent(None, request)
+    print response
+
 def runCommand(addr):
     channel = rpc.SyncRpcChannel(addr.split(':'))
     slave = slave_pb2.SlaveService_Stub(channel)
@@ -21,7 +29,7 @@ def getHardware(addr):
     channel = rpc.SyncRpcChannel(addr.split(':'))
     slave = slave_pb2.SlaveService_Stub(channel)
     request = slave_pb2.GetHardwareRequest()
-    request.lshw = True
+    request.lshw = False
     response = slave.getHardware(None, request)
     print response.lspci
     print response.lscpu
@@ -40,4 +48,4 @@ def main2(addr):
     print response
 
 if __name__ == "__main__":
-    getHardware(sys.argv[1])
+    getFile(sys.argv[1])

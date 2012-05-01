@@ -17,6 +17,7 @@ message SlaveHeartbeat {
   optional int32 listen_port = 21;
   optional int32 slave_pid = 22;
   optional int64 start_time_us = 23;
+  optional string slave_version = 24;
 
   // static proc files
   optional string cpuinfo = 30;

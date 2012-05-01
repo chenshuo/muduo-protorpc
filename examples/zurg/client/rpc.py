@@ -92,4 +92,7 @@ if __name__ == "__main__":
     request = rpcservice_pb2.ListRpcRequest()
     request.list_method = True
     print rpcList.listRpc(None, request)
+    request = rpcservice_pb2.GetServiceRequest()
+    request.service_name = "zurg.SlaveService"
+    print rpcList.getService(None, request)
 

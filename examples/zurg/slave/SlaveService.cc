@@ -46,12 +46,18 @@ void SlaveServiceImpl::getFileContent(const GetFileContentRequestPtr& request,
            << " maxSize = " << request->max_size();
   GetFileContentResponse response;
   int64_t file_size = 0;
+  int64_t modify_time = 0;
+  int64_t create_time = 0;
   int err = muduo::FileUtil::readFile(request->file_name(),
                                       request->max_size(),
                                       response.mutable_content(),
-                                      &file_size);
+                                      &file_size,
+                                      &modify_time,
+                                      &create_time);
   response.set_error_code(err);
   response.set_file_size(file_size);
+  response.set_modify_time(modify_time);
+  response.set_create_time(create_time);
 
   LOG_DEBUG << "SlaveServiceImpl::getFileContent - err " << err;
   done(&response);
@@ -86,5 +92,29 @@ void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
                                       boost::bind(&Process::onTimeoutWeak, weakProcessPtr));
     process->setTimerId(timerId);
   }
+}
+
+void SlaveServiceImpl::runScript(const RunScriptRequestPtr& request,
+                         const RunCommandResponse* responsePrototype,
+                         const RpcDoneCallback& done)
+{
+}
+
+void SlaveServiceImpl::addApplication(const AddApplicationRequestPtr& request,
+                              const AddApplicationResponse* responsePrototype,
+                              const RpcDoneCallback& done)
+{
+}
+
+void SlaveServiceImpl::startApplication(const StartApplicationRequestPtr& request,
+                                const StartApplicationResponse* responsePrototype,
+                                const RpcDoneCallback& done)
+{
+}
+
+void SlaveServiceImpl::stopApplication(const StopApplicationRequestPtr& request,
+                               const StopApplicationResponse* responsePrototype,
+                               const RpcDoneCallback& done)
+{
 }
 
