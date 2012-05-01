@@ -29,6 +29,9 @@ class SlaveApp : boost::noncopyable
 
   void run();
 
+  const std::string& name() const;
+  static SlaveApp& instance() { return *instance_; }
+
  private:
   muduo::net::EventLoop loop_;
   const SlaveConfig& config_;
@@ -37,6 +40,8 @@ class SlaveApp : boost::noncopyable
 
   // optional
   boost::scoped_ptr<muduo::net::RpcServer> server_;
+
+  static SlaveApp* instance_;
 };
 
 }

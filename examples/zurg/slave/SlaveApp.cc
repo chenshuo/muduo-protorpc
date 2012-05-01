@@ -13,6 +13,8 @@
 using namespace zurg;
 using namespace muduo::net;
 
+SlaveApp* SlaveApp::instance_ = NULL;
+
 SlaveApp::SlaveApp(const SlaveConfig& config)
   : loop_(),
     config_(config),
@@ -20,6 +22,8 @@ SlaveApp::SlaveApp(const SlaveConfig& config)
     service_(new SlaveServiceImpl(&loop_, config.zombieInterval_))
 {
   assert(config.valid());
+  assert(instance_ == NULL);
+  instance_ = this;
 
   LOG_INFO << "Start zurg_slave";
   if (config.listenPort_ > 0)
@@ -33,6 +37,11 @@ SlaveApp::SlaveApp(const SlaveConfig& config)
 
 SlaveApp::~SlaveApp()
 {
+}
+
+const std::string& SlaveApp::name() const
+{
+  return config_.name_;
 }
 
 void SlaveApp::run()

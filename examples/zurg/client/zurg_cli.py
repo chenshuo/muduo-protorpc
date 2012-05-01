@@ -25,6 +25,17 @@ def runCommand(addr):
     print response
     print response.finish_time_us - response.start_time_us
 
+def runScript(addr):
+    channel = rpc.SyncRpcChannel(addr.split(':'))
+    slave = slave_pb2.SlaveService_Stub(channel)
+    request = slave_pb2.RunScriptRequest()
+    request.script = """#!/usr/bin/python
+import sys
+print sys.argv
+"""
+    response = slave.runScript(None, request)
+    print response
+
 def getHardware(addr):
     channel = rpc.SyncRpcChannel(addr.split(':'))
     slave = slave_pb2.SlaveService_Stub(channel)
@@ -48,4 +59,4 @@ def main2(addr):
     print response
 
 if __name__ == "__main__":
-    getFile(sys.argv[1])
+    runScript(sys.argv[1])

@@ -4,6 +4,8 @@
 #include <examples/zurg/slave/GetHardwareTask.h>
 #include <examples/zurg/slave/Process.h>
 
+#include <examples/zurg/common/Util.h>
+
 #include <muduo/base/FileUtil.h>
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>
@@ -95,9 +97,17 @@ void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
 }
 
 void SlaveServiceImpl::runScript(const RunScriptRequestPtr& request,
-                         const RunCommandResponse* responsePrototype,
-                         const RpcDoneCallback& done)
+                                 const RunCommandResponse* responsePrototype,
+                                 const RpcDoneCallback& done)
 {
+  RunCommandRequestPtr runCommandReq(new RunCommandRequest);
+
+  std::string scriptFile = writeTempFile(request->script());
+  LOG_INFO << "runScript - write to " << scriptFile;
+  //FIXME: interpreter
+  runCommandReq->set_command(scriptFile);
+  // FIXME: others
+  runCommand(runCommandReq, NULL, done);
 }
 
 void SlaveServiceImpl::addApplication(const AddApplicationRequestPtr& request,

@@ -14,7 +14,7 @@ using namespace zurg;
 
 void usage(const char* prog)
 {
-  printf("Usage\n%s [-d listen_port] -n name master_ip:master_port\n", prog);
+  printf("Usage\n%s [-d listen_port] -n instance_name master_ip:master_port\n", prog);
 }
 
 SlaveConfig parseCommandLine(int argc, char* argv[])
