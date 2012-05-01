@@ -2,6 +2,7 @@
 #define MUDUO_PROTORPC_ZURG_HEARTBEAT_H
 
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <muduo/base/Types.h>
 #include <string>
@@ -18,6 +19,7 @@ namespace zurg
 {
 class MasterService_Stub;
 class SlaveConfig;
+class ProcFs;
 
 class Heartbeat : boost::noncopyable
 {
@@ -25,17 +27,19 @@ class Heartbeat : boost::noncopyable
   Heartbeat(muduo::net::EventLoop* loop,
             const SlaveConfig& config,
             MasterService_Stub* stub);
+  ~Heartbeat();
   void start();
   void stop();
 
  private:
   void onTimer();
 
-  void beat(bool firstTime);
+  void beat(bool showStatic);
 
   muduo::net::EventLoop* loop_;
   std::string name_;
   MasterService_Stub* stub_;
+  boost::scoped_ptr<ProcFs> procFs_;
   bool beating_;
 };
 

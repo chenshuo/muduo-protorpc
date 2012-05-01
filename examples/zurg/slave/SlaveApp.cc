@@ -16,7 +16,7 @@ using namespace muduo::net;
 SlaveApp::SlaveApp(const SlaveConfig& config)
   : loop_(),
     config_(config),
-    rpcClient_(new RpcClient(&loop_, config)),
+    rpcClient_(new RpcClient(&loop_, config)), // FIXME: share two timers
     service_(new SlaveServiceImpl(&loop_, config.zombieInterval_))
 {
   assert(config.valid());

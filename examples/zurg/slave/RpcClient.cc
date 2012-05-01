@@ -74,7 +74,7 @@ RpcClient::RpcClient(EventLoop* loop, const SlaveConfig& config)
       boost::bind(&RpcClient::onConnection, this, _1));
   client_->setMessageCallback(
       boost::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
-  // client_.enableRetry();
+  client_->enableRetry();
 }
 
 RpcClient::~RpcClient()

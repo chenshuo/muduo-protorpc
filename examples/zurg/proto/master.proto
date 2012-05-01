@@ -12,10 +12,22 @@ message SlaveHeartbeat {
   required string slave_name = 1;
   required int64 send_time_us = 2;
 
+  // static data
   optional string host_name = 20;
   optional int32 listen_port = 21;
   optional int32 slave_pid = 22;
   optional int64 start_time_us = 23;
+
+  // static proc files
+  optional string cpuinfo = 30;
+  optional string version = 31;
+  optional string etc_mtab = 32;
+
+  // dynamic proc files
+  optional string meminfo = 40;
+  optional string proc_stat = 41;
+  optional string loadavg = 42;
+  optional string diskstats = 43;
 }
 
 service MasterService {
