@@ -191,7 +191,9 @@ class RpcChannel : boost::noncopyable
                     Timestamp receiveTime);
 
   void callServiceMethod(const RpcMessage& message);
-  void doneCallback(const ::google::protobuf::Message* response, int64_t id);
+  void doneCallback(const ::google::protobuf::Message* responsePrototype,
+                    const ::google::protobuf::Message* response,
+                    int64_t id);
 
   struct OutstandingCall
   {
