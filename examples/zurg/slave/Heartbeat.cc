@@ -51,6 +51,8 @@ class ProcFs : boost::noncopyable
 };
 }
 
+extern const char* slave_version;
+
 using namespace zurg;
 using namespace muduo;
 using namespace muduo::net;
@@ -104,6 +106,7 @@ void Heartbeat::beat(bool showStatic)
     hb.set_host_name(ProcessInfo::hostname().c_str());
     hb.set_slave_pid(ProcessInfo::pid());
     hb.set_start_time_us(ProcessInfo::startTime().microSecondsSinceEpoch());
+    hb.set_slave_version(slave_version);
     FILL_HB("/proc/cpuinfo", cpuinfo);
     FILL_HB("/proc/version", version);
     FILL_HB("/etc/mtab", etc_mtab);
