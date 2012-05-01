@@ -1,6 +1,7 @@
 #include <examples/zurg/slave/SlaveService.h>
 
 #include <examples/zurg/slave/ChildManager.h>
+#include <examples/zurg/slave/GetHardwareTask.h>
 #include <examples/zurg/slave/Process.h>
 
 #include <muduo/base/FileUtil.h>
@@ -27,12 +28,22 @@ void SlaveServiceImpl::start()
   children_->start();
 }
 
+void SlaveServiceImpl::getHardware(const GetHardwareRequestPtr& request,
+                                   const GetHardwareResponse* responsePrototype,
+                                   const RpcDoneCallback& done)
+{
+  LOG_INFO << "SlaveServiceImpl::getHardware - lshw = " << request->lshw();
+
+  GetHardwareTaskPtr task(new GetHardwareTask(request, done));
+  task->start(this);
+}
+
 void SlaveServiceImpl::getFileContent(const GetFileContentRequestPtr& request,
-    const GetFileContentResponse* responsePrototype,
-    const RpcDoneCallback& done)
+                                      const GetFileContentResponse* responsePrototype,
+                                      const RpcDoneCallback& done)
 {
   LOG_INFO << "SlaveServiceImpl::getFileContent - " << request->file_name()
-    << " maxSize = " << request->max_size();
+           << " maxSize = " << request->max_size();
   GetFileContentResponse response;
   int64_t file_size = 0;
   int err = muduo::FileUtil::readFile(request->file_name(),

@@ -27,6 +27,10 @@ class SlaveServiceImpl : public SlaveService
 
   void start();
 
+  virtual void getHardware(const GetHardwareRequestPtr& request,
+                           const GetHardwareResponse* responsePrototype,
+                           const RpcDoneCallback& done);
+
   virtual void getFileContent(const GetFileContentRequestPtr& request,
                               const GetFileContentResponse* responsePrototype,
                               const RpcDoneCallback& done);
