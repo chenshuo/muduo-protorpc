@@ -38,7 +38,7 @@ class ProcFs : boost::noncopyable
     assert (it != files_.end());
     int size = 0;
     int err = it->second->readToBuffer(&size);
-    LOG_DEBUG << filename << " " << err << " " << size;
+    LOG_TRACE << filename << " " << err << " " << size;
     if (size > 0)
     {
       out->assign(it->second->buffer(), size);
@@ -99,7 +99,7 @@ void Heartbeat::onTimer()
 
 void Heartbeat::beat(bool showStatic)
 {
-  LOG_DEBUG << showStatic;
+  LOG_DEBUG << (showStatic ? "full" : "");
   SlaveHeartbeat hb;
   hb.set_slave_name(name_);
   if (showStatic)

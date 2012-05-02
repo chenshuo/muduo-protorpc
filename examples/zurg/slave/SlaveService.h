@@ -36,6 +36,10 @@ class SlaveServiceImpl : public SlaveService
                               const GetFileContentResponse* responsePrototype,
                               const RpcDoneCallback& done);
 
+  virtual void getFileChecksum(const GetFileChecksumRequestPtr& request,
+                               const GetFileChecksumResponse* responsePrototype,
+                               const RpcDoneCallback& done);
+
   virtual void runCommand(const RunCommandRequestPtr& request,
                           const RunCommandResponse* responsePrototype,
                           const RpcDoneCallback& done);
@@ -45,7 +49,7 @@ class SlaveServiceImpl : public SlaveService
                          const RpcDoneCallback& done);
 
   virtual void addApplication(const AddApplicationRequestPtr& request,
-                              const ApplicationStatus* responsePrototype,
+                              const AddApplicationResponse* responsePrototype,
                               const RpcDoneCallback& done);
 
   virtual void startApplication(const StartApplicationRequestPtr& request,
@@ -57,6 +61,10 @@ class SlaveServiceImpl : public SlaveService
                                const RpcDoneCallback& done);
 
  private:
+  void getFileChecksumDone(const GetFileChecksumRequestPtr& request,
+                           const google::protobuf::Message* response,
+                           const RpcDoneCallback& done);
+
   muduo::net::EventLoop* loop_;
   boost::scoped_ptr<AppManager> apps_;
   boost::scoped_ptr<ChildManager> children_;

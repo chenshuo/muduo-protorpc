@@ -67,6 +67,61 @@ void SlaveServiceImpl::getFileContent(const GetFileContentRequestPtr& request,
   done(&response);
 }
 
+void SlaveServiceImpl::getFileChecksum(const GetFileChecksumRequestPtr& request,
+                                       const GetFileChecksumResponse* responsePrototype,
+                                       const RpcDoneCallback& done)
+{
+  LOG_DEBUG ;
+  if (request->files_size() > 0)
+  {
+    RunCommandRequestPtr runCommandReq(new RunCommandRequest);
+    runCommandReq->set_command("md5sum");
+    for (int i = 0; i < request->files_size(); ++i)
+    {
+      assert(request->files(i).find('\n') == std::string::npos);
+      runCommandReq->add_args(request->files(i));
+    }
+    runCommand(runCommandReq, NULL,
+        boost::bind(&SlaveServiceImpl::getFileChecksumDone, this, request, _1, done));
+  }
+  else
+  {
+    GetFileChecksumResponse response;
+    done(&response);
+  }
+}
+
+void SlaveServiceImpl::getFileChecksumDone(const GetFileChecksumRequestPtr& request,
+                                           const google::protobuf::Message* message,
+                                           const RpcDoneCallback& done)
+{
+  const zurg::RunCommandResponse* runCommandResp =
+      google::protobuf::down_cast<const zurg::RunCommandResponse*>(message);
+
+  const std::string& lines = runCommandResp->std_output();
+  const char* p = lines.c_str();
+  size_t nl = 0;
+  std::map<muduo::StringPiece, muduo::StringPiece> md5sums;
+  while (*p)
+  {
+    muduo::StringPiece md5(p, 32);
+    nl = lines.find('\n', nl);
+    assert(nl != std::string::npos);
+    muduo::StringPiece file(p+34, static_cast<int>(lines.c_str()+nl-p-34));
+    LOG_DEBUG << "'" << md5 << "'  '" << file << "'";
+    md5sums[file] = md5;
+    p = lines.c_str()+nl+1;
+    ++nl;
+  }
+
+  GetFileChecksumResponse response;
+  for (int i = 0; i < request->files_size(); ++i)
+  {
+    md5sums[request->files(i)].CopyToStdString(response.add_md5sums());
+  }
+  done(&response);
+}
+
 void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
                                   const RunCommandResponse* responsePrototype,
                                   const RpcDoneCallback& done)
@@ -113,7 +168,7 @@ void SlaveServiceImpl::runScript(const RunScriptRequestPtr& request,
 }
 
 void SlaveServiceImpl::addApplication(const AddApplicationRequestPtr& request,
-                                      const ApplicationStatus* responsePrototype,
+                                      const AddApplicationResponse* responsePrototype,
                                       const RpcDoneCallback& done)
 {
   apps_->add(request, done);

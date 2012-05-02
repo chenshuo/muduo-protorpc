@@ -14,6 +14,16 @@ def getFile(addr):
     response = slave.getFileContent(None, request)
     print response
 
+def fileChecksum(addr):
+    channel = rpc.SyncRpcChannel(addr.split(':'))
+    slave = slave_pb2.SlaveService_Stub(channel)
+    request = slave_pb2.GetFileChecksumRequest()
+    request.files.append('/bin/bash')
+    request.files.append('/var')
+    request.files.append('/bin/sh')
+    response = slave.getFileChecksum(None, request)
+    print response
+
 def runCommand(addr):
     channel = rpc.SyncRpcChannel(addr.split(':'))
     slave = slave_pb2.SlaveService_Stub(channel)
@@ -68,4 +78,4 @@ def main2(addr):
     print response
 
 if __name__ == "__main__":
-    addApplication(sys.argv[1])
+    fileChecksum(sys.argv[1])

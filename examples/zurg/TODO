@@ -1,1 +1,3 @@
 compress slave heartbeats with zlib or lzo or snappy.
+use process group and killpg(2)
+

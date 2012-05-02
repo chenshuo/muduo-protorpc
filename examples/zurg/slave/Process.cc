@@ -228,7 +228,7 @@ void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
 
   ::sigprocmask(SIG_SETMASK, &oldSigmask, NULL);
   // FIXME: max_memory_mb
-  // FIXME: environ
+  // FIXME: environ with execvpe
   int stdInput = ::open("/dev/null", O_RDONLY);
   ::dup2(stdInput, STDIN_FILENO);
   ::close(stdInput);

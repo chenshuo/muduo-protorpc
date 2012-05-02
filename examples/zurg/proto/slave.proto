@@ -20,7 +20,7 @@ message GetHardwareResponse {
 message GetFileContentRequest {
   required string file_name = 1;
   optional int32 max_size = 2 [default = 1048576];
-  optional int64 offset = 3 [default = 0];
+  // optional int64 offset = 3 [default = 0];
 }
 
 message GetFileContentResponse {
@@ -29,6 +29,14 @@ message GetFileContentResponse {
   optional int64 file_size = 3;
   optional int64 modify_time = 4;
   optional int64 create_time = 5;
+}
+
+message GetFileChecksumRequest {
+  repeated string files = 1;
+}
+
+message GetFileChecksumResponse {
+  repeated string md5sums = 1;
 }
 
 message RunCommandRequest {
@@ -77,6 +85,31 @@ message RunScriptRequest {
   repeated string interpreter_args = 11;
 }
 
+// ------------- Application
+
+enum ApplicationState {
+  kUnknown = 0;
+  kNewApp = 1;
+  kRunning = 2;
+  kExited = 3;
+  kError = 4;
+}
+
+message ApplicationStatus {
+  required ApplicationState state = 1 [default = kUnknown];
+  required string name = 2;
+  optional int32 pid = 3;
+  optional string executable_file = 4;
+
+  optional int64 start_time_us = 10;
+  optional int64 last_stop_time_us = 11;
+  optional int32 threads = 12;
+
+  optional int32 last_exit_status = 30;
+  optional int32 last_signaled = 31;
+  optional bool last_coredump = 32;
+}
+
 message AddApplicationRequest {
   required string name = 1;
   required string binary = 2;
@@ -86,9 +119,17 @@ message AddApplicationRequest {
   optional bool redirect_stdout = 6 [default = true];
   optional bool redirect_stderr = 7 [default = true];
   optional string cwd = 8 [default = "/var/tmp"];
+  optional string cookie = 9;
 
-  optional string md5sum_file = 20;
-  optional string md5sum_hex = 21;
+  repeated string md5sum_files = 20;
+  repeated string expected_md5sums = 21;
+  optional bool md5sum_now = 22;
+}
+
+message AddApplicationResponse {
+  optional ApplicationStatus status = 1;
+  optional AddApplicationRequest prev_request = 2;
+  repeated string md5sums = 3;
 }
 
 message StartApplicationRequest {
@@ -107,27 +148,6 @@ message StopApplicationResponse {
 
 message GetApplicationRequest {
   required string name = 1;
-}
-
-enum ApplicationState {
-  kUnknown = 0;
-  kNewApp = 1;
-  kRunning = 2;
-  kExited = 3;
-}
-
-message ApplicationStatus {
-  required ApplicationState state = 1 [default = kUnknown];
-  required string name = 2;
-  optional int32 pid = 3;
-
-  optional int64 start_time_us = 10;
-  optional int64 last_stop_time_us = 11;
-  optional int32 threads = 12;
-
-  optional int32 last_exit_status = 30;
-  optional int32 last_signaled = 31;
-  optional bool last_coredump = 32;
 }
 
 message GetApplicationResponse {
@@ -154,12 +174,14 @@ service SlaveService {
     returns (GetHardwareResponse);
   rpc getFileContent (GetFileContentRequest)
     returns (GetFileContentResponse);
+  rpc getFileChecksum (GetFileChecksumRequest)
+    returns (GetFileChecksumResponse);
   rpc runCommand (RunCommandRequest)
     returns (RunCommandResponse);
   rpc runScript (RunScriptRequest)
     returns (RunCommandResponse);
   rpc addApplication (AddApplicationRequest)
-    returns (ApplicationStatus);
+    returns (AddApplicationResponse);
   rpc startApplication (StartApplicationRequest)
     returns (StartApplicationResponse);
   rpc stopApplication (StopApplicationRequest)

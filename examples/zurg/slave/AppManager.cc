@@ -26,7 +26,9 @@ AppManager::~AppManager()
 void AppManager::add(const AddApplicationRequestPtr& request,
                      const muduo::net::RpcDoneCallback& done)
 {
-  apps_[request->name()].request = request;
+  AddApplicationRequestPtr& requestRef = apps_[request->name()].request;
+  AddApplicationRequestPtr prev_request(requestRef);
+  requestRef = request;
   ApplicationStatus& status = apps_[request->name()].status;
 
   status.set_name(request->name());
@@ -36,5 +38,11 @@ void AppManager::add(const AddApplicationRequestPtr& request,
     status.set_state(kNewApp);
   }
 
-  done(&status);
+  AddApplicationResponse response;
+  response.mutable_status()->CopyFrom(status);
+  if (prev_request)
+  {
+    response.mutable_prev_request()->CopyFrom(*prev_request);
+  }
+  done(&response);
 }
