@@ -10,7 +10,8 @@ using muduo::string;
 struct SlaveConfig
 {
   SlaveConfig()
-    : error_(false),
+    : prefix_("/var/tmp"),
+      error_(false),
       listenPort_(-1),
       zombieInterval_(10),
       heartbeatInterval_(10)
@@ -23,6 +24,7 @@ struct SlaveConfig
   }
 
   std::string name_;
+  std::string prefix_;
   string masterAddress_;
   bool error_;
   int listenPort_;

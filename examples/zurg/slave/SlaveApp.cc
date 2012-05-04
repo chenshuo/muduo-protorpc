@@ -3,6 +3,7 @@
 #include <examples/zurg/slave/RpcClient.h>
 #include <examples/zurg/slave/SlaveConfig.h>
 #include <examples/zurg/slave/SlaveService.h>
+#include <examples/zurg/common/Util.h>
 
 #include <muduo/protorpc2/RpcServer.h>
 
@@ -26,6 +27,10 @@ SlaveApp::SlaveApp(const SlaveConfig& config)
   instance_ = this;
 
   LOG_INFO << "Start zurg_slave";
+
+  std::string cwd = prefix()+'/'+name();
+  setupWorkingDir(cwd);
+
   if (config.listenPort_ > 0)
   {
     InetAddress listenAddress(static_cast<uint16_t>(config.listenPort_));
@@ -42,6 +47,11 @@ SlaveApp::~SlaveApp()
 const std::string& SlaveApp::name() const
 {
   return config_.name_;
+}
+
+const std::string& SlaveApp::prefix() const
+{
+  return config_.prefix_;
 }
 
 void SlaveApp::run()

@@ -1,6 +1,7 @@
 #include <examples/zurg/slave/Process.h>
 
 #include <examples/zurg/slave/Sink.h>
+#include <examples/zurg/slave/SlaveApp.h>
 
 #include <muduo/base/Logging.h>
 #include <muduo/base/ProcessInfo.h>
@@ -82,6 +83,12 @@ class Pipe : boost::noncopyable
     assert(n == sizeof(x)); (void)n;
   }
 
+  void writeAndExit(int64_t x) __attribute__ ((__noreturn__))
+  {
+    write(x);
+    ::exit(1);
+  }
+
   void closeRead()
   {
     ::close(pipefd_[0]);
@@ -151,17 +158,50 @@ const int kSleepAfterExec = 0; // for strace child
 }
 
 using namespace zurg;
+using namespace muduo;
 using namespace muduo::net;
 
-Process::Process(muduo::net::EventLoop* loop,
+Process::Process(EventLoop* loop,
                  const RunCommandRequestPtr& request,
-                 const muduo::net::RpcDoneCallback& done)
+                 const RpcDoneCallback& done)
   : loop_(loop),
     request_(request),
     doneCallback_(done),
     pid_(0),
-    startTimeInJiffies_(0)
+    startTimeInJiffies_(0),
+    redirectStdout_(false),
+    redirectStderr_(false),
+    runCommand_(true)
 {
+}
+
+Process::Process(EventLoop* loop,
+                 const AddApplicationRequestPtr& appRequest,
+                 const RpcDoneCallback& done)
+  : loop_(loop),
+    doneCallback_(done),
+    pid_(0),
+    startTimeInJiffies_(0),
+    redirectStdout_(appRequest->redirect_stdout()),
+    redirectStderr_(appRequest->redirect_stderr()),
+    runCommand_(false)
+{
+  request_.reset(new RunCommandRequest);
+  request_->set_command(appRequest->binary());
+
+  char dir[256];
+  snprintf(dir, sizeof dir, "%s/%s/%s",
+           SlaveApp::instance().prefix().c_str(),
+           SlaveApp::instance().name().c_str(),
+           appRequest->name().c_str());
+  request_->set_cwd(dir);
+  request_->mutable_args()->CopyFrom(appRequest->args());
+  request_->mutable_envs()->CopyFrom(appRequest->envs());
+  request_->set_envs_only(appRequest->envs_only());
+  request_->set_max_stdout(0);
+  request_->set_max_stderr(0);
+  request_->set_timeout(-1);
+  request_->set_max_memory_mb(appRequest->max_memory_mb());
 }
 
 Process::~Process()
@@ -175,8 +215,8 @@ Process::~Process()
 
 int Process::start()
 {
-  assert(muduo::ProcessInfo::numThreads() == 1);
-  int availabltFds = muduo::ProcessInfo::maxOpenFiles() - muduo::ProcessInfo::openedFiles();
+  assert(ProcessInfo::numThreads() == 1);
+  int availabltFds = ProcessInfo::maxOpenFiles() - ProcessInfo::openedFiles();
   if (availabltFds < 20)
   {
     // to fork() and capture stdout/stderr, we need new file descriptors.
@@ -185,13 +225,52 @@ int Process::start()
 
   // The self-pipe trick
   // http://cr.yp.to/docs/selfpipe.html
-  Pipe execError, stdOutput, stdError;
+  Pipe execError;
 
+  Pipe stdOutput;
+  Pipe stdError;
+
+  startTime_ = Timestamp::now();
   const pid_t result = ::fork();
   if (result == 0)
   {
     // child process
-    execChild(execError, stdOutput, stdError); // never return
+    ::mkdir(request_->cwd().c_str(), 0755);
+
+    int stdOutputFd = -1;
+    int stdErrorFd = -1;
+    if (runCommand_)
+    {
+      stdOutputFd = stdOutput.writeFd();
+      stdErrorFd = stdError.writeFd();
+    }
+    else
+    {
+      if (redirectStdout_)
+      {
+        char buf[256];
+        ::snprintf(buf, sizeof buf, "%s/stdout.%d.%s",
+                   request_->cwd().c_str(), ProcessInfo::pid(), startTime_.toString().c_str());
+        stdOutputFd = ::open(buf, O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+      }
+      else
+      {
+        stdOutputFd = ::open("/dev/null", O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+      }
+
+      if (redirectStderr_)
+      {
+        char buf[256];
+        ::snprintf(buf, sizeof buf, "%s/stderr.%d.%s",
+                   request_->cwd().c_str(), ProcessInfo::pid(), startTime_.toString().c_str());
+        stdErrorFd = ::open(buf, O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+      }
+      else
+      {
+        stdErrorFd = ::open("/dev/null", O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+      }
+    }
+    execChild(execError, stdOutputFd, stdErrorFd); // never return
   }
   else if (result > 0)
   {
@@ -206,15 +285,15 @@ int Process::start()
   }
 }
 
-void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
+void Process::execChild(Pipe& execError, int stdOutput, int stdError)
 {
   if (kSleepAfterExec > 0)
   {
-    fprintf(stderr, "Child pid = %d", ::getpid());
+    ::fprintf(stderr, "Child pid = %d", ::getpid());
     ::sleep(kSleepAfterExec);
   }
 
-  ProcStatFile stat(muduo::ProcessInfo::pid());
+  ProcStatFile stat(ProcessInfo::pid());
   execError.write(stat.startTime);
 
   std::vector<const char*> argv;
@@ -230,15 +309,19 @@ void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   // FIXME: max_memory_mb
   // FIXME: environ with execvpe
   int stdInput = ::open("/dev/null", O_RDONLY);
+  assert(stdInput >= 0);
   ::dup2(stdInput, STDIN_FILENO);
   ::close(stdInput);
-  ::dup2(stdOutput.writeFd(), STDOUT_FILENO);
-  ::dup2(stdError.writeFd(), STDERR_FILENO);
+  ::dup2(stdOutput, STDOUT_FILENO);
+  ::dup2(stdError, STDERR_FILENO);
+  // FIXME: check return values
+
   if (::chdir(request_->cwd().c_str()) == 0)
   {
     const char* cmd = request_->command().c_str();
     ::execvp(cmd, const_cast<char**>(&*argv.begin()));
   }
+
   // should not reach here
   execError.write(errno);
   // FIXME: in child process, logging fd is closed.
@@ -249,7 +332,6 @@ void Process::execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
 int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
 {
   LOG_DEBUG << "PARENT child pid " << pid_;
-  startTime_ = muduo::Timestamp::now();
   int64_t childStartTime = 0;
   int64_t childErrno = 0;
   execError.closeWrite();
@@ -262,20 +344,27 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   {
     LOG_INFO << "started child pid " << pid_;
     // read nothing, child process exec successfully.
-    int stdoutFd = ::dup(stdOutput.readFd());
-    int stderrFd = ::dup(stdError.readFd());
-    if (stdoutFd < 0 || stderrFd < 0)
+    if (runCommand_)
     {
-      if (stdoutFd >= 0) ::close(stdoutFd);
-      if (stderrFd >= 0) ::close(stderrFd);
-      return errno;
+      int stdoutFd = ::dup(stdOutput.readFd());
+      int stderrFd = ::dup(stdError.readFd());
+      if (stdoutFd < 0 || stderrFd < 0)
+      {
+        if (stdoutFd >= 0) ::close(stdoutFd);
+        if (stderrFd >= 0) ::close(stderrFd);
+        return errno;
+      }
+      setNonBlockAndCloseOnExec(stdoutFd);
+      setNonBlockAndCloseOnExec(stderrFd);
+      stdoutSink_.reset(new Sink(loop_, stdoutFd, request_->max_stdout(), "stdout"));
+      stderrSink_.reset(new Sink(loop_, stderrFd, request_->max_stderr(), "stderr"));
+      stdoutSink_->start();
+      stderrSink_->start();
     }
-    setNonBlockAndCloseOnExec(stdoutFd);
-    setNonBlockAndCloseOnExec(stderrFd);
-    stdoutSink_.reset(new Sink(loop_, stdoutFd, request_->max_stdout(), "stdout"));
-    stderrSink_.reset(new Sink(loop_, stderrFd, request_->max_stderr(), "stderr"));
-    stdoutSink_->start();
-    stderrSink_->start();
+    else
+    {
+      // FIXME: runApp
+    }
     return 0;
   }
   else if (n == sizeof(childErrno))
@@ -323,7 +412,7 @@ void Process::onTimeout()
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-void Process::onExit(int status, const struct rusage& ru)
+void Process::onCommandExit(int status, const struct rusage& ru)
 {
   RunCommandResponse response;
 
@@ -341,7 +430,7 @@ void Process::onExit(int status, const struct rusage& ru)
     response.set_coredump(WCOREDUMP(status));
   }
 
-  LOG_INFO << "Process[" << pid_ << "] onExit " << buf;
+  LOG_INFO << "Process[" << pid_ << "] onCommandExit " << buf;
 
   assert(!loop_->eventHandling());
   // FIXME: defer 100ms or blocking read to capture all outputs.

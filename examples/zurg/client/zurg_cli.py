@@ -28,7 +28,7 @@ def runCommand(addr):
     channel = rpc.SyncRpcChannel(addr.split(':'))
     slave = slave_pb2.SlaveService_Stub(channel)
     request = slave_pb2.RunCommandRequest()
-    request.command = 'sleep'
+    request.command = 'pwd'
     request.args.append('8')
     request.timeout = 5
     response = slave.runCommand(None, request)
@@ -62,8 +62,12 @@ def addApplication(addr):
     slave = slave_pb2.SlaveService_Stub(channel)
     request = slave_pb2.AddApplicationRequest()
     request.name = 'xyz'
-    request.binary = ''
+    request.binary = 'test2.py'
     response = slave.addApplication(None, request)
+    print response
+    request = slave_pb2.StartApplicationsRequest();
+    request.names.append('xyz')
+    response = slave.startApplications(None, request)
     print response
 
 def main2(addr):
@@ -78,4 +82,4 @@ def main2(addr):
     print response
 
 if __name__ == "__main__":
-    fileChecksum(sys.argv[1])
+    addApplication(sys.argv[1])

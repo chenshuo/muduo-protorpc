@@ -100,6 +100,8 @@ message ApplicationStatus {
   required string name = 2;
   optional int32 pid = 3;
   optional string executable_file = 4;
+  optional string cwd = 5;
+  optional string error_msg = 6;
 
   optional int64 start_time_us = 10;
   optional int64 last_stop_time_us = 11;
@@ -118,8 +120,9 @@ message AddApplicationRequest {
   optional bool envs_only = 5 [default = false];
   optional bool redirect_stdout = 6 [default = true];
   optional bool redirect_stderr = 7 [default = true];
-  optional string cwd = 8 [default = "/var/tmp"];
-  optional string cookie = 9;
+  // optional string cwd_prefix = 8 [default = "/var/tmp"];
+  optional int32 max_memory_mb = 9 [default = 32768];
+  optional string comment = 10;
 
   repeated string md5sum_files = 20;
   repeated string expected_md5sums = 21;
@@ -132,34 +135,35 @@ message AddApplicationResponse {
   repeated string md5sums = 3;
 }
 
-message StartApplicationRequest {
-  required string name = 1;
+message StartApplicationsRequest {
+  repeated string names = 1;
 }
 
-message StartApplicationResponse {
+message StartApplicationsResponse {
+  repeated ApplicationStatus status = 1;
 }
 
 message StopApplicationRequest {
-  required string name = 1;
+  required string names = 1;
 }
 
 message StopApplicationResponse {
-}
-
-message GetApplicationRequest {
-  required string name = 1;
-}
-
-message GetApplicationResponse {
   required ApplicationStatus status = 1;
+}
+
+message GetApplicationsRequest {
+  repeated string names = 1;
+}
+
+message GetApplicationsResponse {
+  repeated ApplicationStatus status = 1;
 }
 
 message ListApplicationsRequest {
 }
 
 message ListApplicationsResponse {
-
-  repeated ApplicationStatus applications = 2;
+  repeated string names = 2;
 }
 
 message RemoveApplicationsRequest {
@@ -182,12 +186,12 @@ service SlaveService {
     returns (RunCommandResponse);
   rpc addApplication (AddApplicationRequest)
     returns (AddApplicationResponse);
-  rpc startApplication (StartApplicationRequest)
-    returns (StartApplicationResponse);
+  rpc startApplications (StartApplicationsRequest)
+    returns (StartApplicationsResponse);
   rpc stopApplication (StopApplicationRequest)
     returns (StopApplicationResponse);
-  rpc getApplication (GetApplicationRequest)
-    returns (GetApplicationResponse);
+  rpc getApplications (GetApplicationsRequest)
+    returns (GetApplicationsResponse);
   rpc listApplications (ListApplicationsRequest)
     returns (ListApplicationsResponse);
   rpc removeApplications (RemoveApplicationsRequest)

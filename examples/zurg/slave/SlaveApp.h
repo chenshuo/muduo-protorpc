@@ -30,6 +30,7 @@ class SlaveApp : boost::noncopyable
   void run();
 
   const std::string& name() const;
+  const std::string& prefix() const;
   static SlaveApp& instance() { return *instance_; }
 
  private:

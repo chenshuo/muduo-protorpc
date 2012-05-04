@@ -14,7 +14,6 @@ namespace muduo
 {
 namespace net
 {
-class Channel;
 class EventLoop;
 }
 }
@@ -35,6 +34,10 @@ class Process : public boost::enable_shared_from_this<Process>,
           const RunCommandRequestPtr& request,
           const muduo::net::RpcDoneCallback& done);
 
+  Process(muduo::net::EventLoop* loop,
+          const AddApplicationRequestPtr& request,
+          const muduo::net::RpcDoneCallback& done);
+
   ~Process();
 
   int start(); // may throw
@@ -49,13 +52,13 @@ class Process : public boost::enable_shared_from_this<Process>,
     timerId_ = timerId;
   }
 
-  void onExit(int status, const struct rusage&);
+  void onCommandExit(int status, const struct ::rusage&);
   void onTimeout();
 
   static void onTimeoutWeak(const boost::weak_ptr<Process>& wkPtr);
 
  private:
-  void execChild(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
+  void execChild(Pipe& execError, int stdOutput, int stdError)
        __attribute__ ((__noreturn__));;
   int afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError);
 
@@ -68,6 +71,9 @@ class Process : public boost::enable_shared_from_this<Process>,
   muduo::net::TimerId timerId_;
   boost::shared_ptr<Sink> stdoutSink_;
   boost::shared_ptr<Sink> stderrSink_;
+  bool redirectStdout_;
+  bool redirectStderr_;
+  bool runCommand_;
 };
 typedef boost::shared_ptr<Process> ProcessPtr;
 

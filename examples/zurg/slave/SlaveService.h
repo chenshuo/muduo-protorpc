@@ -52,9 +52,9 @@ class SlaveServiceImpl : public SlaveService
                               const AddApplicationResponse* responsePrototype,
                               const RpcDoneCallback& done);
 
-  virtual void startApplication(const StartApplicationRequestPtr& request,
-                                const StartApplicationResponse* responsePrototype,
-                                const RpcDoneCallback& done);
+  virtual void startApplications(const StartApplicationsRequestPtr& request,
+                                 const StartApplicationsResponse* responsePrototype,
+                                 const RpcDoneCallback& done);
 
   virtual void stopApplication(const StopApplicationRequestPtr& request,
                                const StopApplicationResponse* responsePrototype,
@@ -66,8 +66,8 @@ class SlaveServiceImpl : public SlaveService
                            const RpcDoneCallback& done);
 
   muduo::net::EventLoop* loop_;
-  boost::scoped_ptr<AppManager> apps_;
   boost::scoped_ptr<ChildManager> children_;
+  boost::scoped_ptr<AppManager> apps_;
 };
 
 }

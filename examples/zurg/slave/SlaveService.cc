@@ -18,8 +18,8 @@ using namespace zurg;
 
 SlaveServiceImpl::SlaveServiceImpl(EventLoop* loop, int zombieInterval)
   : loop_(loop),
-    apps_(new AppManager),
-    children_(new ChildManager(loop_, zombieInterval))
+    children_(new ChildManager(loop_, zombieInterval)),
+    apps_(new AppManager(loop_, get_pointer(children_)))
 {
 }
 
@@ -99,20 +99,8 @@ void SlaveServiceImpl::getFileChecksumDone(const GetFileChecksumRequestPtr& requ
       google::protobuf::down_cast<const zurg::RunCommandResponse*>(message);
 
   const std::string& lines = runCommandResp->std_output();
-  const char* p = lines.c_str();
-  size_t nl = 0;
   std::map<muduo::StringPiece, muduo::StringPiece> md5sums;
-  while (*p)
-  {
-    muduo::StringPiece md5(p, 32);
-    nl = lines.find('\n', nl);
-    assert(nl != std::string::npos);
-    muduo::StringPiece file(p+34, static_cast<int>(lines.c_str()+nl-p-34));
-    LOG_DEBUG << "'" << md5 << "'  '" << file << "'";
-    md5sums[file] = md5;
-    p = lines.c_str()+nl+1;
-    ++nl;
-  }
+  parseMd5sum(lines, &md5sums);
 
   GetFileChecksumResponse response;
   for (int i = 0; i < request->files_size(); ++i)
@@ -145,7 +133,7 @@ void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
   else
   {
     children_->runAtExit(process->pid(),  // bind strong ptr
-                         boost::bind(&Process::onExit, process, _1, _2));
+                         boost::bind(&Process::onCommandExit, process, _1, _2));
     boost::weak_ptr<Process> weakProcessPtr(process);
     TimerId timerId = loop_->runAfter(request->timeout(),
                                       boost::bind(&Process::onTimeoutWeak, weakProcessPtr));
@@ -161,7 +149,7 @@ void SlaveServiceImpl::runScript(const RunScriptRequestPtr& request,
 
   std::string scriptFile = writeTempFile(request->script());
   LOG_INFO << "runScript - write to " << scriptFile;
-  //FIXME: interpreter
+  // FIXME: interpreter
   runCommandReq->set_command(scriptFile);
   // FIXME: others
   runCommand(runCommandReq, NULL, done);
@@ -174,15 +162,17 @@ void SlaveServiceImpl::addApplication(const AddApplicationRequestPtr& request,
   apps_->add(request, done);
 }
 
-void SlaveServiceImpl::startApplication(const StartApplicationRequestPtr& request,
-                                const StartApplicationResponse* responsePrototype,
-                                const RpcDoneCallback& done)
+void SlaveServiceImpl::startApplications(const StartApplicationsRequestPtr& request,
+                                         const StartApplicationsResponse* responsePrototype,
+                                         const RpcDoneCallback& done)
 {
+  apps_->start(request, done);
 }
 
 void SlaveServiceImpl::stopApplication(const StopApplicationRequestPtr& request,
-                               const StopApplicationResponse* responsePrototype,
-                               const RpcDoneCallback& done)
+                                       const StopApplicationResponse* responsePrototype,
+                                       const RpcDoneCallback& done)
 {
+  apps_->stop(request, done);
 }
 
