@@ -49,6 +49,74 @@ class ProcFs : boost::noncopyable
  private:
   FileMap files_;
 };
+
+void strip_cpuinfo(std::string* cpuinfo)
+{
+  // FIXME:
+}
+
+void strip_diskstats(std::string* diskstats)
+{
+  std::string result;
+  result.reserve(diskstats->size());
+  muduo::StringPiece zeros(" 0 0 0 0 0 0 0 0 0 0 0\n");
+
+  const char* p = diskstats->c_str();
+  const char* nl = NULL;
+  while ( (nl = ::strchr(p, '\n')) != NULL)
+  {
+    int pos = static_cast<int>(nl - p + 1);
+
+    muduo::StringPiece line(p, pos);
+    if (line.size() > zeros.size())
+    {
+      muduo::StringPiece end(line.data() + line.size()-zeros.size(), zeros.size());
+      if (end != zeros)
+      {
+        result.append(line.data(), line.size());
+      }
+    }
+
+    p += pos;
+  }
+  assert(p == &*diskstats->end());
+  diskstats->swap(result);
+}
+
+struct AreBothSpaces
+{
+  bool operator()(char x, char y) const
+  {
+    return x == ' ' && y == ' ';
+  }
+};
+
+void strip_meminfo(std::string* meminfo)
+{
+  std::string::iterator it = std::unique(meminfo->begin(), meminfo->end(), AreBothSpaces());
+  meminfo->erase(it, meminfo->end());
+}
+
+void strip_stat(std::string* proc_stat)
+{
+  const char* intr = ::strstr(proc_stat->c_str(), "\nintr ");
+  if (intr != NULL)
+  {
+    const char* nl = ::strchr(intr + 1, '\n');
+    assert(nl != NULL);
+
+    muduo::StringPiece line(intr+1, static_cast<int>(nl-intr-1));
+    const char* p = nl;
+    while (p[-1] == '0' && p[-2] == ' ')
+    {
+      p -= 2;
+    }
+
+    ++p;
+    proc_stat->erase(p - proc_stat->c_str(), nl-p);
+  }
+}
+
 }
 
 extern const char* slave_version;
@@ -115,6 +183,7 @@ void Heartbeat::beat(bool showStatic)
     FILL_HB("/proc/cpuinfo", cpuinfo);
     FILL_HB("/proc/version", version);
     FILL_HB("/etc/mtab", etc_mtab);
+    strip_cpuinfo(hb.mutable_cpuinfo());
   }
   hb.set_send_time_us(Timestamp::now().microSecondsSinceEpoch());
 
@@ -124,6 +193,9 @@ void Heartbeat::beat(bool showStatic)
   FILL_HB("/proc/diskstats", diskstats);
   FILL_HB("/proc/net/dev", net_dev);
   FILL_HB("/proc/net/tcp", net_tcp);
+  strip_diskstats(hb.mutable_diskstats());
+  strip_meminfo(hb.mutable_meminfo());
+  strip_stat(hb.mutable_proc_stat());
 
   stub_->slaveHeartbeat(hb, ignoreCallback);
 }
