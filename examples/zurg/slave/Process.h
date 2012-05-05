@@ -63,6 +63,7 @@ class Process : public boost::enable_shared_from_this<Process>,
   muduo::net::RpcDoneCallback doneCallback_;
   pid_t pid_;
   std::string name_;
+  std::string exe_file_;
   muduo::Timestamp startTime_;
   int64_t startTimeInJiffies_;
   muduo::net::TimerId timerId_;

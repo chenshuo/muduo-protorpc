@@ -71,8 +71,8 @@ class Pipe : boost::noncopyable
       closeWrite();
   }
 
-  int readFd() const { return pipefd_[0]; }
-  int writeFd() const { return pipefd_[1]; }
+  int readFd() const { return pipefd_[kRead]; }
+  int writeFd() const { return pipefd_[kWrite]; }
 
   ssize_t read(int64_t* x)
   {
@@ -85,26 +85,21 @@ class Pipe : boost::noncopyable
     assert(n == sizeof(x)); (void)n;
   }
 
-  void writeAndExit(int64_t x) __attribute__ ((__noreturn__))
-  {
-    write(x);
-    ::exit(1);
-  }
-
   void closeRead()
   {
-    ::close(pipefd_[0]);
-    pipefd_[0] = -1;
+    ::close(readFd());
+    pipefd_[kRead] = -1;
   }
 
   void closeWrite()
   {
-    ::close(pipefd_[1]);
-    pipefd_[1] = -1;
+    ::close(writeFd());
+    pipefd_[kWrite] = -1;
   }
 
  private:
   int pipefd_[2];
+  static const int kRead = 0, kWrite = 1;
 };
 
 struct ProcStatFile
@@ -296,6 +291,7 @@ void Process::execChild(Pipe& execError, int stdOutput, int stdError)
     }
     argv.push_back(NULL);
 
+    // FIXME: new process group, new session
     ::sigprocmask(SIG_SETMASK, &oldSigmask, NULL);
     if (::chdir(request_->cwd().c_str()) < 0)
       throw static_cast<int>(errno);
@@ -353,7 +349,19 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   {
     LOG_INFO << "started child pid " << pid_;
 
-    // FIXME: /proc/pid/exe
+    char filename[64];
+    ::snprintf(filename, sizeof filename, "/proc/%d/exe", pid_);
+    char buf[1024];
+    ssize_t len = ::readlink(filename, buf, sizeof buf);
+    if (len >= 0)
+    {
+      exe_file_.assign(buf, len);
+      LOG_INFO << filename << " -> " << exe_file_;
+    }
+    else
+    {
+      LOG_SYSERR << "Fail to read link " << filename;
+    }
 
     // read nothing, child process exec successfully.
     if (runCommand_)
@@ -424,7 +432,7 @@ void Process::onTimeout()
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 // FIXME: dup AppManager::onProcessExit
-void Process::onCommandExit(int status, const struct rusage& ru)
+void Process::onCommandExit(const int status, const struct rusage& ru)
 {
   RunCommandResponse response;
 
@@ -454,6 +462,7 @@ void Process::onCommandExit(int status, const struct rusage& ru)
   response.set_status(status);
   response.set_std_output(stdoutSink_->bufferAsStdString());
   response.set_std_error(stderrSink_->bufferAsStdString());
+  response.set_executable_file(exe_file_);
   response.set_start_time_us(startTime_.microSecondsSinceEpoch());
   response.set_finish_time_us(muduo::Timestamp::now().microSecondsSinceEpoch());
   response.set_user_time(getSeconds(ru.ru_utime));

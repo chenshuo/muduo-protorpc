@@ -57,6 +57,7 @@ message RunCommandResponse {
   optional int32 status = 3;
   optional bytes std_output = 4;
   optional bytes std_error = 5;
+  optional string executable_file = 6;
 
   optional int64 start_time_us  = 16;
   optional int64 finish_time_us = 17;
