@@ -4,6 +4,7 @@
 #include <examples/zurg/slave/ChildManager.h>
 #include <examples/zurg/slave/GetHardwareTask.h>
 #include <examples/zurg/slave/Process.h>
+#include <examples/zurg/slave/SlaveApp.h>
 
 #include <examples/zurg/common/Util.h>
 
@@ -147,7 +148,7 @@ void SlaveServiceImpl::runScript(const RunScriptRequestPtr& request,
 {
   RunCommandRequestPtr runCommandReq(new RunCommandRequest);
 
-  std::string scriptFile = writeTempFile(request->script());
+  std::string scriptFile = writeTempFile(SlaveApp::instance().name(), request->script());
   LOG_INFO << "runScript - write to " << scriptFile;
   // FIXME: interpreter
   runCommandReq->set_command(scriptFile);
@@ -174,5 +175,23 @@ void SlaveServiceImpl::stopApplication(const StopApplicationRequestPtr& request,
                                        const RpcDoneCallback& done)
 {
   apps_->stop(request, done);
+}
+
+void SlaveServiceImpl::getApplications(const GetApplicationsRequestPtr& request,
+                                       const GetApplicationsResponse* responsePrototype,
+                                       const RpcDoneCallback& done)
+{
+}
+
+void SlaveServiceImpl::listApplications(const ListApplicationsRequestPtr& request,
+                                        const ListApplicationsResponse* responsePrototype,
+                                        const RpcDoneCallback& done)
+{
+}
+
+void SlaveServiceImpl::removeApplications(const RemoveApplicationsRequestPtr& request,
+                                          const RemoveApplicationsResponse* responsePrototype,
+                                          const RpcDoneCallback& done)
+{
 }
 

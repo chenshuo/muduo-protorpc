@@ -12,7 +12,19 @@ message DiskUsage {
   required string device = 1;
   required string mount = 2;
 
+  // statvfs
+  required int32 block_size = 3;
+  required int64 blocks_all = 4;
+  required int64 blocks_free = 5;
+  required int64 blocks_avail = 6;
 
+  required int64 inodes_all = 7;
+  required int64 inodes_free = 8;
+  required int64 inodes_avail = 9;
+
+  required uint64 fsid = 10;
+  required uint64 flag = 11;
+  required uint64 namemax = 12;
 }
 
 message SlaveHeartbeat {

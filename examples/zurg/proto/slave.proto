@@ -101,11 +101,12 @@ message ApplicationStatus {
   optional int32 pid = 3;
   optional string executable_file = 4;
   optional string cwd = 5;
-  optional string error_msg = 6;
+  optional string message = 6;
 
   optional int64 start_time_us = 10;
   optional int64 last_stop_time_us = 11;
-  optional int32 threads = 12;
+  optional string proc_stat = 12;
+  optional string proc_status = 13;
 
   optional int32 last_exit_status = 30;
   optional int32 last_signaled = 31;

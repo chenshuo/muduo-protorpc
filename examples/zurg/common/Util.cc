@@ -1,5 +1,4 @@
 #include <examples/zurg/common/Util.h>
-#include <examples/zurg/slave/SlaveApp.h>
 
 #include <muduo/base/Logging.h>
 #include <muduo/base/ProcessInfo.h>
@@ -18,11 +17,11 @@ namespace zurg
 
 int g_tempFileCount = 0;
 
-std::string writeTempFile(StringPiece content)
+std::string writeTempFile(StringPiece prefix, StringPiece content)
 {
   char buf[256];
   ::snprintf(buf, sizeof buf, "/tmp/%s-runScript-%s-%d-%05d-XXXXXX",
-             SlaveApp::instance().name().c_str(),
+             prefix.data(),
              ProcessInfo::startTime().toString().c_str(),
              ProcessInfo::pid(),
              ++g_tempFileCount);
@@ -85,6 +84,23 @@ void setupWorkingDir(const std::string& cwd)
   ssize_t n = ::write(fd, pid, len);
   assert(n == len); (void)n;
   // leave fd open, to keep the lock
+}
+
+void setNonBlockAndCloseOnExec(int fd)
+{
+  // non-block
+  int flags = ::fcntl(fd, F_GETFL, 0);
+  flags |= O_NONBLOCK;
+  int ret = ::fcntl(fd, F_SETFL, flags);
+  // FIXME check
+
+  // close-on-exec
+  flags = ::fcntl(fd, F_GETFD, 0);
+  flags |= FD_CLOEXEC;
+  ret = ::fcntl(fd, F_SETFD, flags);
+  // FIXME check
+
+  (void)ret;
 }
 
 }

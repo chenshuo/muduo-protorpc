@@ -43,7 +43,17 @@ class AppManager : boost::noncopyable
   void stop(const StopApplicationRequestPtr& request,
             const muduo::net::RpcDoneCallback& done);
 
+  void get(const GetApplicationsRequestPtr& request,
+           const muduo::net::RpcDoneCallback& done);
+
+  void list(const ListApplicationsRequestPtr& request,
+            const muduo::net::RpcDoneCallback& done);
+
+  void remove(const RemoveApplicationsRequestPtr& request,
+              const muduo::net::RpcDoneCallback& done);
+
  private:
+  void startApp(Application* app, ApplicationStatus* out);
   void onProcessExit(const ProcessPtr&, int status, const struct rusage&);
 
   typedef std::map<std::string, Application> AppMap;

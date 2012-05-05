@@ -60,6 +60,18 @@ class SlaveServiceImpl : public SlaveService
                                const StopApplicationResponse* responsePrototype,
                                const RpcDoneCallback& done);
 
+  virtual void getApplications(const GetApplicationsRequestPtr& request,
+                               const GetApplicationsResponse* responsePrototype,
+                               const RpcDoneCallback& done);
+
+  virtual void listApplications(const ListApplicationsRequestPtr& request,
+                                const ListApplicationsResponse* responsePrototype,
+                                const RpcDoneCallback& done);
+
+  virtual void removeApplications(const RemoveApplicationsRequestPtr& request,
+                                  const RemoveApplicationsResponse* responsePrototype,
+                                  const RpcDoneCallback& done);
+
  private:
   void getFileChecksumDone(const GetFileChecksumRequestPtr& request,
                            const google::protobuf::Message* response,

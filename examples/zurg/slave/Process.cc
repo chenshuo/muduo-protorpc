@@ -3,6 +3,8 @@
 #include <examples/zurg/slave/Sink.h>
 #include <examples/zurg/slave/SlaveApp.h>
 
+#include <examples/zurg/common/Util.h>
+
 #include <muduo/base/Logging.h>
 #include <muduo/base/ProcessInfo.h>
 #include <muduo/base/FileUtil.h>
@@ -31,23 +33,6 @@ float getSeconds(const struct timeval& tv)
   int64_t microSeconds = tv.tv_sec*1000000 + tv.tv_usec;
   double seconds = static_cast<double>(microSeconds)/1000000.0;
   return static_cast<float>(seconds);
-}
-
-void setNonBlockAndCloseOnExec(int fd)
-{
-  // non-block
-  int flags = ::fcntl(fd, F_GETFL, 0);
-  flags |= O_NONBLOCK;
-  int ret = ::fcntl(fd, F_SETFL, flags);
-  // FIXME check
-
-  // close-on-exec
-  flags = ::fcntl(fd, F_GETFD, 0);
-  flags |= FD_CLOEXEC;
-  ret = ::fcntl(fd, F_SETFD, flags);
-  // FIXME check
-
-  (void)ret;
 }
 
 int redirect(bool toFile, const std::string& prefix, const char* postfix)
@@ -127,13 +112,14 @@ struct ProcStatFile
  public:
   explicit ProcStatFile(int pid)
     : valid(false),
+      error(0),
       ppid(0),
       startTime(0)
   {
     char filename[64];
     ::snprintf(filename, sizeof filename, "/proc/%d/stat", pid);
     muduo::FileUtil::SmallFile file(filename);
-    if (file.readToBuffer(NULL) == 0)
+    if ( (error = file.readToBuffer(NULL)) == 0)
     {
       valid = true;
       parse(file.buffer());
@@ -141,6 +127,7 @@ struct ProcStatFile
   }
 
   bool valid;
+  int error;
   int ppid;
   int64_t startTime;
 
@@ -178,6 +165,8 @@ using namespace zurg;
 using namespace muduo;
 using namespace muduo::net;
 
+// ========================================================
+
 Process::Process(EventLoop* loop,
                  const RunCommandRequestPtr& request,
                  const RpcDoneCallback& done)
@@ -192,18 +181,17 @@ Process::Process(EventLoop* loop,
 {
 }
 
-Process::Process(EventLoop* loop,
-                 const AddApplicationRequestPtr& appRequest,
-                 const RpcDoneCallback& done)
-  : loop_(loop),
-    doneCallback_(done),
+Process::Process(const AddApplicationRequestPtr& appRequest)
+  : loop_(NULL),
+    request_(new RunCommandRequest),
+    doneCallback_(),
     pid_(0),
+    name_(appRequest->name()),
     startTimeInJiffies_(0),
     redirectStdout_(appRequest->redirect_stdout()),
     redirectStderr_(appRequest->redirect_stderr()),
     runCommand_(false)
 {
-  request_.reset(new RunCommandRequest);
   request_->set_command(appRequest->binary());
 
   char dir[256];
@@ -212,6 +200,7 @@ Process::Process(EventLoop* loop,
            SlaveApp::instance().name().c_str(),
            appRequest->name().c_str());
   request_->set_cwd(dir);
+
   request_->mutable_args()->CopyFrom(appRequest->args());
   request_->mutable_envs()->CopyFrom(appRequest->envs());
   request_->set_envs_only(appRequest->envs_only());
@@ -248,7 +237,7 @@ int Process::start()
   Pipe stdError;
 
   startTime_ = Timestamp::now();
-  const pid_t result = ::fork();
+  const pid_t result = ::fork(); // FORKED HERE
   if (result == 0)
   {
     // child process
@@ -264,14 +253,9 @@ int Process::start()
     else
     {
       string startTimeStr = startTime_.toString();
+      // FIXME: capture errno
       stdoutFd = redirect(redirectStdout_, request_->cwd()+"/stdout", startTimeStr.c_str());
       stderrFd = redirect(redirectStderr_, request_->cwd()+"/stderr", startTimeStr.c_str());
-    }
-    if (stdoutFd < 0 || stderrFd < 0)
-    {
-      if (stdoutFd >= 0) ::close(stdoutFd);
-      if (stderrFd >= 0) ::close(stderrFd);
-      return errno;
     }
     execChild(execError, stdoutFd, stderrFd); // never return
   }
@@ -296,39 +280,61 @@ void Process::execChild(Pipe& execError, int stdOutput, int stdError)
     ::sleep(kSleepAfterExec);
   }
 
-  ProcStatFile stat(ProcessInfo::pid());
-  execError.write(stat.startTime);
-
-  std::vector<const char*> argv;
-  argv.reserve(request_->args_size() + 2);
-  argv.push_back(request_->command().c_str());
-  for (int i = 0; i < request_->args_size(); ++i)
+  try
   {
-    argv.push_back(request_->args(i).c_str());
-  }
-  argv.push_back(NULL);
+    ProcStatFile stat(ProcessInfo::pid());
+    if (!stat.valid) throw stat.error;
 
-  ::sigprocmask(SIG_SETMASK, &oldSigmask, NULL);
-  // FIXME: max_memory_mb
-  // FIXME: environ with execvpe
-  int stdInput = ::open("/dev/null", O_RDONLY);
-  assert(stdInput >= 0);
-  ::dup2(stdInput, STDIN_FILENO);
-  ::close(stdInput);
-  ::dup2(stdOutput, STDOUT_FILENO);
-  ::dup2(stdError, STDERR_FILENO);
-  // FIXME: check return values
+    execError.write(stat.startTime);
 
-  if (::chdir(request_->cwd().c_str()) == 0)
-  {
+    std::vector<const char*> argv;
+    argv.reserve(request_->args_size() + 2);
+    argv.push_back(request_->command().c_str());
+    for (int i = 0; i < request_->args_size(); ++i)
+    {
+      argv.push_back(request_->args(i).c_str());
+    }
+    argv.push_back(NULL);
+
+    ::sigprocmask(SIG_SETMASK, &oldSigmask, NULL);
+    if (::chdir(request_->cwd().c_str()) < 0)
+      throw static_cast<int>(errno);
+
+    // FIXME: max_memory_mb
+    // FIXME: environ with execvpe
+    int stdInput = ::open("/dev/null", O_RDONLY);
+    if (stdInput < 0) throw static_cast<int>(errno);
+
+    if (stdOutput < 0 || stdError < 0)
+    {
+      if (stdOutput >= 0) ::close(stdOutput);
+      if (stdError >= 0) ::close(stdError);
+      throw static_cast<int>(EACCES);
+    }
+
+    if (::dup2(stdInput, STDIN_FILENO) < 0)
+      throw static_cast<int>(errno);
+    ::close(stdInput);
+    if (::dup2(stdOutput, STDOUT_FILENO) < 0)
+      throw static_cast<int>(errno);
+    if (::dup2(stdError, STDERR_FILENO) < 0)
+      throw static_cast<int>(errno);
+
     const char* cmd = request_->command().c_str();
     ::execvp(cmd, const_cast<char**>(&*argv.begin()));
+    // should not reach here
+    throw static_cast<int>(errno);
   }
-
-  // should not reach here
-  execError.write(errno);
-  // FIXME: in child process, logging fd is closed.
-  // LOG_ERROR << "CHILD " << muduo::strerror_tl(err) << " (errno=" << err << ")";
+  catch(int error)
+  {
+    execError.write(error);
+    fprintf(stderr, "CHILD %s (errno=%d)\n", muduo::strerror_tl(error), error);
+  }
+  catch(...)
+  {
+    int error = EINVAL;
+    execError.write(error);
+  }
   ::exit(1);
 }
 
@@ -346,6 +352,9 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   if (n == 0)
   {
     LOG_INFO << "started child pid " << pid_;
+
+    // FIXME: /proc/pid/exe
+
     // read nothing, child process exec successfully.
     if (runCommand_)
     {
@@ -414,7 +423,7 @@ void Process::onTimeout()
 }
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-
+// FIXME: dup AppManager::onProcessExit
 void Process::onCommandExit(int status, const struct rusage& ru)
 {
   RunCommandResponse response;

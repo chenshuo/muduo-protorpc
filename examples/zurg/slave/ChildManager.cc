@@ -75,19 +75,26 @@ void ChildManager::onRead(muduo::Timestamp t)
               << " ssi_utime = " << siginfo.ssi_utime
               << " ssi_stime = " << siginfo.ssi_stime;
 
-    pid_t pid = siginfo.ssi_pid;
-    LOG_INFO << "ChildManager::onRead - SIGCHLD of " << pid;
-    int status = 0;
-    struct rusage resourceUsage;
-    bzero(&resourceUsage, sizeof(resourceUsage));
-    pid_t result = ::wait4(pid, &status, WNOHANG, &resourceUsage);
-    if (result == pid)
+    if (siginfo.ssi_signo == SIGCHLD)
     {
-      onExit(pid, status, resourceUsage);
+      pid_t pid = siginfo.ssi_pid;
+      LOG_INFO << "ChildManager::onRead - SIGCHLD of " << pid;
+      int status = 0;
+      struct rusage resourceUsage;
+      bzero(&resourceUsage, sizeof(resourceUsage));
+      pid_t result = ::wait4(pid, &status, WNOHANG, &resourceUsage);
+      if (result == pid)
+      {
+        onExit(pid, status, resourceUsage);
+      }
+      else if (result < 0)
+      {
+        LOG_SYSERR << "ChildManager::onRead - wait4 ";
+      }
     }
-    else if (result < 0)
+    else
     {
-      LOG_SYSERR << "ChildManager::onRead - wait4 ";
+      LOG_ERROR << "ChildManager::onRead - unknown signal " << siginfo.ssi_signo;
     }
   }
   else

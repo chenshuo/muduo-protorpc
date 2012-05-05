@@ -62,7 +62,7 @@ def addApplication(addr):
     slave = slave_pb2.SlaveService_Stub(channel)
     request = slave_pb2.AddApplicationRequest()
     request.name = 'xyz'
-    request.binary = 'test2.py'
+    request.binary = 'test1.py'
     response = slave.addApplication(None, request)
     print response
     request = slave_pb2.StartApplicationsRequest();

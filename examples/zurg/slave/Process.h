@@ -34,18 +34,14 @@ class Process : public boost::enable_shared_from_this<Process>,
           const RunCommandRequestPtr& request,
           const muduo::net::RpcDoneCallback& done);
 
-  Process(muduo::net::EventLoop* loop,
-          const AddApplicationRequestPtr& request,
-          const muduo::net::RpcDoneCallback& done);
+  Process(const AddApplicationRequestPtr& request);
 
   ~Process();
 
   int start(); // may throw
 
-  pid_t pid() const
-  {
-    return pid_;
-  }
+  pid_t pid() const { return pid_; }
+  const std::string& name() const { return name_; }
 
   void setTimerId(const muduo::net::TimerId& timerId)
   {
@@ -66,6 +62,7 @@ class Process : public boost::enable_shared_from_this<Process>,
   RunCommandRequestPtr request_;
   muduo::net::RpcDoneCallback doneCallback_;
   pid_t pid_;
+  std::string name_;
   muduo::Timestamp startTime_;
   int64_t startTimeInJiffies_;
   muduo::net::TimerId timerId_;

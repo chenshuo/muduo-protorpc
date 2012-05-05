@@ -5,6 +5,10 @@
 
 #include <muduo/base/Logging.h>
 
+#include <stdio.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+
 namespace zurg
 {
 
@@ -63,41 +67,7 @@ void AppManager::start(const StartApplicationsRequestPtr& request,
     AppMap::iterator it = apps_.find(appName);
     if (it != apps_.end())
     {
-      const AddApplicationRequestPtr& appRequest(it->second.request);
-      const ApplicationStatus& old_status(it->second.status);
-      ApplicationStatus* status = response.add_status();
-      status->CopyFrom(old_status);
-
-      if (old_status.state() != kRunning)
-      {
-        ProcessPtr process(new Process(loop_, appRequest, done));
-        int err = 12; // ENOMEM;
-        try
-        {
-          err = process->start();
-        }
-        catch (...)
-        {
-        }
-
-        if (err)
-        {
-          status->set_state(kError);
-          // FIXME
-        }
-        else
-        {
-          status->set_state(kRunning);
-          status->set_pid(process->pid());
-          // FIXME
-          children_->runAtExit(process->pid(),  // bind strong ptr
-              boost::bind(&AppManager::onProcessExit, this, process, _1, _2));
-        }
-      }
-      else
-      {
-        // already running
-      }
+      startApp(&it->second, response.add_status());
     }
     else
     {
@@ -105,9 +75,49 @@ void AppManager::start(const StartApplicationsRequestPtr& request,
       ApplicationStatus* status = response.add_status();
       status->set_state(kUnknown);
       status->set_name(appName);
+      status->set_message("Application is unknown.");
     }
   }
   done(&response);
+}
+
+void AppManager::startApp(Application* app, ApplicationStatus* out)
+{
+  const AddApplicationRequestPtr& appRequest(app->request);
+  ApplicationStatus* status = &app->status;
+
+  if (status->state() != kRunning)
+  {
+    ProcessPtr process(new Process(appRequest));
+    int err = 12; // ENOMEM;
+    try
+    {
+      err = process->start();
+    }
+    catch (...)
+    {
+    }
+
+    if (err)
+    {
+      status->set_state(kError);
+      // FIXME
+    }
+    else
+    {
+      status->set_state(kRunning);
+      status->set_pid(process->pid());
+      // FIXME
+      children_->runAtExit(process->pid(),  // bind strong ptr
+          boost::bind(&AppManager::onProcessExit, this, process, _1, _2));
+    }
+    out->CopyFrom(*status);
+  }
+  else
+  {
+    out->CopyFrom(*status);
+    out->set_message("Already running.");
+  }
 }
 
 void AppManager::stop(const StopApplicationRequestPtr& request,
@@ -115,6 +125,39 @@ void AppManager::stop(const StopApplicationRequestPtr& request,
 {
 }
 
-void AppManager::onProcessExit(const ProcessPtr&, int status, const struct rusage&)
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+// FIXME: dup Process::onCommandExit
+void AppManager::onProcessExit(const ProcessPtr& process, int status, const struct rusage&)
 {
+  const std::string& appName = process->name();
+
+  char buf[256];
+  if (WIFEXITED(status))
+  {
+    snprintf(buf, sizeof buf, "exit status %d", WEXITSTATUS(status));
+    // response.set_exit_status(WEXITSTATUS(status));
+  }
+  else if (WIFSIGNALED(status))
+  {
+    snprintf(buf, sizeof buf, "signaled %d%s",
+             WTERMSIG(status), WCOREDUMP(status) ? " (core dump)" : "");
+    // response.set_signaled(WTERMSIG(status));
+    // response.set_coredump(WCOREDUMP(status));
+  }
+
+  LOG_WARN << "AppManager[" << appName << "] onProcessExit - " << buf;
+
+  AppMap::iterator it = apps_.find(appName);
+  if (it != apps_.end())
+  {
+    Application& app = it->second;
+    app.status.set_state(kExited);
+
+
+    // FIXME: notify master
+  }
+  else
+  {
+    LOG_ERROR << "AppManager[" << appName << "] - Unknown app ";
+  }
 }
