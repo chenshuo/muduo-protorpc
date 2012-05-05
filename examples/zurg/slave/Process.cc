@@ -50,6 +50,23 @@ void setNonBlockAndCloseOnExec(int fd)
   (void)ret;
 }
 
+int redirect(bool toFile, const std::string& prefix, const char* postfix)
+{
+  int fd = -1;
+  if (toFile)
+  {
+    char buf[256];
+    ::snprintf(buf, sizeof buf, "%s.%d.%s",
+               prefix.c_str(), muduo::ProcessInfo::pid(), postfix);
+    fd = ::open(buf, O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+  }
+  else
+  {
+    fd = ::open("/dev/null", O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+  }
+  return fd;
+}
+
 class Pipe : boost::noncopyable
 {
  public:
@@ -235,42 +252,28 @@ int Process::start()
   if (result == 0)
   {
     // child process
-    ::mkdir(request_->cwd().c_str(), 0755);
+    ::mkdir(request_->cwd().c_str(), 0755); // FIXME: check return value
 
-    int stdOutputFd = -1;
-    int stdErrorFd = -1;
+    int stdoutFd = -1;
+    int stderrFd = -1;
     if (runCommand_)
     {
-      stdOutputFd = stdOutput.writeFd();
-      stdErrorFd = stdError.writeFd();
+      stdoutFd = stdOutput.writeFd();
+      stderrFd = stdError.writeFd();
     }
     else
     {
-      if (redirectStdout_)
-      {
-        char buf[256];
-        ::snprintf(buf, sizeof buf, "%s/stdout.%d.%s",
-                   request_->cwd().c_str(), ProcessInfo::pid(), startTime_.toString().c_str());
-        stdOutputFd = ::open(buf, O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
-      }
-      else
-      {
-        stdOutputFd = ::open("/dev/null", O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
-      }
-
-      if (redirectStderr_)
-      {
-        char buf[256];
-        ::snprintf(buf, sizeof buf, "%s/stderr.%d.%s",
-                   request_->cwd().c_str(), ProcessInfo::pid(), startTime_.toString().c_str());
-        stdErrorFd = ::open(buf, O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
-      }
-      else
-      {
-        stdErrorFd = ::open("/dev/null", O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
-      }
+      string startTimeStr = startTime_.toString();
+      stdoutFd = redirect(redirectStdout_, request_->cwd()+"/stdout", startTimeStr.c_str());
+      stderrFd = redirect(redirectStderr_, request_->cwd()+"/stderr", startTimeStr.c_str());
     }
-    execChild(execError, stdOutputFd, stdErrorFd); // never return
+    if (stdoutFd < 0 || stderrFd < 0)
+    {
+      if (stdoutFd >= 0) ::close(stdoutFd);
+      if (stderrFd >= 0) ::close(stderrFd);
+      return errno;
+    }
+    execChild(execError, stdoutFd, stderrFd); // never return
   }
   else if (result > 0)
   {
