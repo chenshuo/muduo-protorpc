@@ -16,6 +16,8 @@ class MasterServiceImpl(master_pb2.MasterService):
         print request.version
         print "======", len(request.etc_mtab)
         print request.etc_mtab
+        print "====== uname ", request.uname.ByteSize()
+        print request.uname
         print "======", len(request.disk_usage)
         print request.disk_usage
         print "======", len(request.meminfo)

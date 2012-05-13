@@ -11,6 +11,8 @@
 #include <muduo/base/Timestamp.h>
 #include <muduo/net/EventLoop.h>
 
+#include <sys/utsname.h>
+
 namespace zurg
 {
 
@@ -53,6 +55,25 @@ class ProcFs : boost::noncopyable
 void strip_cpuinfo(std::string* cpuinfo)
 {
   // FIXME:
+}
+
+void fill_uname(SlaveHeartbeat* hb)
+{
+  struct utsname buf;
+  if (::uname(&buf) == 0)
+  {
+    SlaveHeartbeat::Uname* p = hb->mutable_uname();
+    p->set_sysname(buf.sysname);
+    p->set_nodename(buf.nodename);
+    p->set_release(buf.release);
+    p->set_version(buf.version);
+    p->set_machine(buf.machine);
+    p->set_domainname(buf.domainname);
+  }
+  else
+  {
+    LOG_SYSERR << "uname";
+  }
 }
 
 void strip_diskstats(std::string* diskstats)
@@ -184,6 +205,8 @@ void Heartbeat::beat(bool showStatic)
     FILL_HB("/proc/version", version);
     FILL_HB("/etc/mtab", etc_mtab);
     strip_cpuinfo(hb.mutable_cpuinfo());
+    // sysctl
+    fill_uname(&hb);
   }
   hb.set_send_time_us(Timestamp::now().microSecondsSinceEpoch());
 

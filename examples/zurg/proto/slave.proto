@@ -39,6 +39,57 @@ message GetFileChecksumResponse {
   repeated string md5sums = 1;
 }
 
+message DiskUsage {
+  required string device = 1;
+  required string mount = 2;
+
+  // statvfs
+  required int32 block_size = 3;
+  required int64 blocks_all = 4;
+  required int64 blocks_free = 5;
+  required int64 blocks_avail = 6;
+
+  required int64 inodes_all = 7;
+  required int64 inodes_free = 8;
+  required int64 inodes_avail = 9;
+
+  required uint64 fsid = 10;
+  required uint64 flag = 11;
+  required uint64 namemax = 12;
+}
+
+message ListProcessesRequest {
+  repeated string include_users = 1;
+  repeated string exclude_users = 2;
+  optional bool get_load = 3 [default = false];
+}
+
+message ListProcessesResponse {
+
+  message Process {
+    required int32 pid = 1;
+    required string proc_stat = 2;
+    required string proc_status = 3;
+    optional string cmdline = 4;
+    optional string exe_file = 5;
+  }
+
+  repeated Process processes = 1;
+
+  // load
+  optional string meminfo = 2;
+  optional string proc_stat = 3;
+  optional string loadavg = 4;
+  optional string diskstats = 5;
+  optional string net_dev = 6;
+  optional string net_tcp = 7;
+
+  repeated DiskUsage disk_usage = 8;
+
+  optional string version = 9;
+  optional string cpuinfo = 10;
+}
+
 message RunCommandRequest {
   required string command = 1;
   optional string cwd = 2 [default = "/tmp"];
@@ -103,6 +154,7 @@ message ApplicationStatus {
   optional string executable_file = 4;
   optional string cwd = 5;
   optional string message = 6;
+  optional string slave_name = 8;
 
   optional int64 start_time_us = 10;
   optional int64 last_stop_time_us = 11;
@@ -122,7 +174,7 @@ message AddApplicationRequest {
   optional bool envs_only = 5 [default = false];
   optional bool redirect_stdout = 6 [default = true];
   optional bool redirect_stderr = 7 [default = true];
-  // optional string cwd_prefix = 8 [default = "/var/tmp"];
+  required string slave_name = 8;
   optional int32 max_memory_mb = 9 [default = 32768];
   optional string comment = 10;
 
@@ -182,6 +234,8 @@ service SlaveService {
     returns (GetFileContentResponse);
   rpc getFileChecksum (GetFileChecksumRequest)
     returns (GetFileChecksumResponse);
+  rpc listProcesses (ListProcessesRequest)
+    returns (ListProcessesResponse);
   rpc runCommand (RunCommandRequest)
     returns (RunCommandResponse);
   rpc runScript (RunScriptRequest)
