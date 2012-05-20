@@ -40,6 +40,10 @@ class SlaveServiceImpl : public SlaveService
                                const GetFileChecksumResponse* responsePrototype,
                                const RpcDoneCallback& done);
 
+  virtual void listProcesses(const ListProcessesRequestPtr& request,
+                             const ListProcessesResponse* responsePrototype,
+                             const RpcDoneCallback& done);
+
   virtual void runCommand(const RunCommandRequestPtr& request,
                           const RunCommandResponse* responsePrototype,
                           const RpcDoneCallback& done);

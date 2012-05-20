@@ -111,6 +111,17 @@ void SlaveServiceImpl::getFileChecksumDone(const GetFileChecksumRequestPtr& requ
   done(&response);
 }
 
+void SlaveServiceImpl::listProcesses(const ListProcessesRequestPtr& request,
+                                     const ListProcessesResponse* responsePrototype,
+                                     const RpcDoneCallback& done)
+{
+  ListProcessesResponse response;
+  if (request->get_load())
+  {
+  }
+  done(&response);
+}
+
 void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
                                   const RunCommandResponse* responsePrototype,
                                   const RpcDoneCallback& done)
