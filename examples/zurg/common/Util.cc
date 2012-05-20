@@ -26,10 +26,10 @@ std::string writeTempFile(StringPiece prefix, StringPiece content)
              ProcessInfo::pid(),
              ++g_tempFileCount);
   int tempfd = ::mkostemp(buf, O_CLOEXEC);
-  ::pwrite(tempfd, content.data(), content.size(), 0);
+  ssize_t n = ::pwrite(tempfd, content.data(), content.size(), 0);
   ::fchmod(tempfd, 0755);
   ::close(tempfd);
-  return buf;
+  return n == content.size() ? buf : "";
 }
 
 void parseMd5sum(const std::string& lines, std::map<StringPiece, StringPiece>* md5sums)

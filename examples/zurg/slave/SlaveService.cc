@@ -149,11 +149,19 @@ void SlaveServiceImpl::runScript(const RunScriptRequestPtr& request,
   RunCommandRequestPtr runCommandReq(new RunCommandRequest);
 
   std::string scriptFile = writeTempFile(SlaveApp::instance().name(), request->script());
-  LOG_INFO << "runScript - write to " << scriptFile;
-  // FIXME: interpreter
-  runCommandReq->set_command(scriptFile);
-  // FIXME: others
-  runCommand(runCommandReq, NULL, done);
+  if (!scriptFile.empty())
+  {
+    LOG_INFO << "runScript - write to " << scriptFile;
+    // FIXME: interpreter
+    runCommandReq->set_command(scriptFile);
+    // FIXME: others
+    runCommand(runCommandReq, NULL, done);
+  }
+  else
+  {
+    LOG_ERROR << "runScript - failed to write script file";
+    // FIXME: done
+  }
 }
 
 void SlaveServiceImpl::addApplication(const AddApplicationRequestPtr& request,
