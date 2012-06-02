@@ -32,7 +32,8 @@ class RpcClient : boost::noncopyable
       stub_(get_pointer(channel_)),
       allConnected_(allConnected),
       allFinished_(allFinished),
-      count_(0)
+      count_(0),
+      finished_(false)
   {
     client_.setConnectionCallback(
         boost::bind(&RpcClient::onConnection, this, _1));
@@ -49,7 +50,7 @@ class RpcClient : boost::noncopyable
   void sendRequest()
   {
     echo::EchoRequest request;
-    request.set_payload("001010");
+    request.set_payload("0123456789ABCDEF");
     stub_.Echo(request, boost::bind(&RpcClient::replied, this, _1));
   }
 
@@ -73,8 +74,9 @@ class RpcClient : boost::noncopyable
     {
       sendRequest();
     }
-    else
+    else if (!finished_)
     {
+      finished_ = true;
       LOG_INFO << "RpcClient " << this << " finished";
       allFinished_->countDown();
     }
@@ -87,6 +89,7 @@ class RpcClient : boost::noncopyable
   CountDownLatch* allConnected_;
   CountDownLatch* allFinished_;
   int count_;
+  bool finished_;
 };
 
 int main(int argc, char* argv[])
@@ -94,19 +97,9 @@ int main(int argc, char* argv[])
   LOG_INFO << "pid = " << getpid();
   if (argc > 1)
   {
-    int nClients = 1;
-
-    if (argc > 2)
-    {
-      nClients = atoi(argv[2]);
-    }
-
-    int nThreads = 1;
-
-    if (argc > 3)
-    {
-      nThreads = atoi(argv[3]);
-    }
+    int nClients = argc > 2 ? atoi(argv[2]) : 1;
+    int nThreads = argc > 3 ? atoi(argv[3]) : 1;
+    int nPipeline = argc > 4 ? atoi(argv[4]) : 1;
 
     CountDownLatch allConnected(nClients);
     CountDownLatch allFinished(nClients);
@@ -124,11 +117,15 @@ int main(int argc, char* argv[])
       clients.back().connect();
     }
     allConnected.wait();
-    Timestamp start(Timestamp::now());
     LOG_INFO << "all connected";
+    sleep(5);
+    LOG_WARN << "start";
+    Timestamp start(Timestamp::now());
     for (int i = 0; i < nClients; ++i)
     {
-      clients[i].sendRequest();
+      // pipline
+      for (int k = 0; k < nPipeline; ++k)
+        clients[i].sendRequest();
     }
     allFinished.wait();
     Timestamp end(Timestamp::now());
@@ -137,11 +134,12 @@ int main(int argc, char* argv[])
     printf("%f seconds\n", seconds);
     printf("%.1f calls per second\n", nClients * kRequests / seconds);
 
+    sleep(5);
     google::protobuf::ShutdownProtobufLibrary();
   }
   else
   {
-    printf("Usage: %s host_ip numClients [numThreads]\n", argv[0]);
+    printf("Usage: %s host_ip numClients [numThreads [piplines]]\n", argv[0]);
   }
 }
 

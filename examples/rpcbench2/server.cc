@@ -26,14 +26,15 @@ class EchoServiceImpl : public EchoService
 
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-  LOG_INFO << "pid = " << getpid();
+  int nThreads =  argc > 1 ? atoi(argv[1]) : 1;
+  LOG_INFO << "pid = " << getpid() << " threads = " << nThreads;
   EventLoop loop;
   InetAddress listenAddr(8888);
   echo::EchoServiceImpl impl;
   RpcServer server(&loop, listenAddr);
-  server.setThreadNum(2);
+  server.setThreadNum(nThreads);
   server.registerService(&impl);
   server.start();
   loop.loop();
