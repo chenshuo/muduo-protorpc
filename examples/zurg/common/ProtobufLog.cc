@@ -29,7 +29,9 @@ void zurgLogHandler(google::protobuf::LogLevel level,
   muduo::Logger::LogLevel logLevel = toMuduoLogLevel(level);
   if (muduo::Logger::logLevel() <= logLevel)
   {
-    muduo::Logger(filename, line, logLevel).stream() << "Protobuf - " << message;
+    muduo::Logger(muduo::Logger::SourceFile(filename),
+                  line,
+                  logLevel).stream() << "Protobuf - " << message;
   }
 }
 
