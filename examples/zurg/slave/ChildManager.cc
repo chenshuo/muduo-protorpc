@@ -44,7 +44,7 @@ ChildManager::ChildManager(muduo::net::EventLoop* loop, int zombieInterval)
 ChildManager::~ChildManager()
 {
   channel_.disableAll();
-  loop_->removeChannel(&channel_);
+  channel_.remove();
   ::close(signalFd_);
 }
 

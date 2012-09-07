@@ -32,7 +32,7 @@ class Sink : public boost::enable_shared_from_this<Sink>,
     assert(!loop_->eventHandling());
     if (fd_ >= 0)
     {
-      loop_->removeChannel(&ch_);
+      ch_.remove();
       ::close(fd_);
     }
   }
@@ -85,7 +85,7 @@ class Sink : public boost::enable_shared_from_this<Sink>,
   void delayedClose()
   {
     assert(ch_.isNoneEvent());
-    loop_->removeChannel(&ch_);
+    ch_.remove();
     ::close(fd_);
     fd_ = -1;
   }
