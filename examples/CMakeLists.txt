@@ -32,4 +32,5 @@ else()
   add_subdirectory(resolver EXCLUDE_FROM_ALL)  # async response
 endif()
 
+add_subdirectory(median)
 add_subdirectory(zurg)

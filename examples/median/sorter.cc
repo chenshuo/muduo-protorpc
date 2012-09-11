@@ -29,6 +29,7 @@ class SorterImpl : public Sorter
                      const QueryResponse* responsePrototype,
                      const RpcDoneCallback& done)
   {
+    LOG_INFO << "Query";
     QueryResponse resp;
     resp.set_count(data_.size());
     if (data_.size() > 0)
@@ -44,6 +45,7 @@ class SorterImpl : public Sorter
                       const RpcDoneCallback& done)
   {
     int64_t value = request->guess();
+    LOG_INFO << "Search " << value;
     SearchResponse resp;
 
     std::vector<int64_t>::iterator it = std::lower_bound(data_.begin(), data_.end(), value);
@@ -56,6 +58,7 @@ class SorterImpl : public Sorter
                         const ::rpc2::Empty* responsePrototype,
                         const RpcDoneCallback& done)
   {
+    LOG_INFO << "Generate ";
     data_.clear();
     for (int64_t i = 0; i < request->count(); ++i)
     {

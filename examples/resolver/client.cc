@@ -70,7 +70,7 @@ class RpcClient : boost::noncopyable
       inet_ntop(AF_INET, &ip, buf, sizeof buf);
 
       LOG_INFO << "resolved " << host << " : " << buf << "\n"
-               << resp->DebugString().c_str();
+               << resp->DebugString();
     }
     else
     {

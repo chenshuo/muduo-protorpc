@@ -50,7 +50,7 @@ class RpcClient : boost::noncopyable
 
   void solved(const boost::shared_ptr<sudoku::SudokuResponse>& resp)
   {
-    LOG_INFO << "solved:\n" << resp->DebugString().c_str();
+    LOG_INFO << "solved:\n" << resp->DebugString();
     loop_->quit();
   }
 

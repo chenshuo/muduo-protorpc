@@ -10,5 +10,5 @@ add_library(median_proto ${PROTO_SRCS})
 add_executable(median_sorter sorter.cc)
 target_link_libraries(median_sorter median_proto muduo_protorpc2)
 
-#add_executable(protorpc_resolver_server server.cc)
-#target_link_libraries(protorpc_resolver_server resolver_proto muduo_protorpc2 muduo_cdns cares)
+add_executable(median_collector collector.cc)
+target_link_libraries(median_collector median_proto muduo_protorpc2)
