@@ -9,6 +9,8 @@ add_custom_command(OUTPUT rpcservice.pb.cc rpcservice.pb.h rpc2.pb.h rpc2.pb.cc
   ARGS -i "s/#include <google\\/protobuf\\/service.h>/#include <muduo\\/protorpc2\\/service.h>/" rpcservice.pb.h
   COMMAND sed
   ARGS -i "s/#include .rpc.pb.h./#include <muduo\\/net\\/protorpc\\/rpc.pb.h>/" rpcservice.pb.h
+  COMMAND sed
+  ARGS -i  "/protoc_insertion_point.includes./i#include <boost/shared_ptr.hpp>" muduo/protorpc2/rpc2.pb.h
   COMMAND mv
   ARGS muduo/protorpc2/rpc2.pb.h muduo/protorpc2/rpc2.pb.cc .
   MAIN_DEPENDENCY ${PROTO_SRC}

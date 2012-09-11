@@ -16,7 +16,7 @@
 namespace zurg
 {
 
-void ignoreCallback(const EmptyPtr&)
+void ignoreCallback(const ::rpc2::EmptyPtr&)
 {
 }
 

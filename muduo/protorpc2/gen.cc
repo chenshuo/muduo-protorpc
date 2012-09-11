@@ -39,6 +39,7 @@
 #include <google/protobuf/compiler/plugin.h>
 #include <google/protobuf/io/printer.h>
 
+#include <muduo/protorpc2/cpp_message.h>
 #include <muduo/protorpc2/cpp_service.h>
 
 #include <stdio.h>
@@ -55,6 +56,16 @@ namespace cpp {
 
 string ClassName(const Descriptor* descriptor, bool qualified);
 
+void MessageGenerator::GenerateForwardDeclaration(io::Printer* printer) {
+  printer->Print("class $classname$;\n"
+                 "typedef ::boost::shared_ptr<$classname$> $classname$Ptr;\n",
+                 "classname", classname_);
+
+  for (int i = 0; i < descriptor_->nested_type_count(); i++) {
+    nested_generators_[i]->GenerateForwardDeclaration(printer);
+  }
+}
+
 void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
   if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   // Forward-declare the stub type.
@@ -62,20 +73,6 @@ void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
     "class $classname$_Stub;\n"
     "\n");
 
-  map<string, string> types;
-
-  for (int i = 0; i < descriptor_->method_count(); i++) {
-    const MethodDescriptor* method = descriptor_->method(i);
-    types[ClassName(method->input_type(), true)] = ClassName(method->input_type(), false);
-    types[ClassName(method->output_type(), true)] = ClassName(method->output_type(), false);
-  }
-  for (map<string, string>::iterator it = types.begin();
-       it != types.end(); ++it) {
-    map<string, string> sub_vars;
-    sub_vars["type"] = it->first;
-    sub_vars["typedef"] = it->second;
-    printer->Print(sub_vars, "typedef ::boost::shared_ptr< $type$> $typedef$Ptr;\n");
-  }
   GenerateInterface(printer);
   GenerateStubDefinition(printer);
 }
@@ -165,7 +162,7 @@ void ServiceGenerator::GenerateMethodSignatures(
     sub_vars["name"] = method->name();
     sub_vars["input_type"] = ClassName(method->input_type(), true);
     sub_vars["output_type"] = ClassName(method->output_type(), true);
-    sub_vars["output_typedef"] = ClassName(method->output_type(), false);
+    sub_vars["output_typedef"] = ClassName(method->output_type(), true);
     sub_vars["virtual"] = "virtual ";
 
     if (stub_or_non == NON_STUB) {
@@ -344,7 +341,7 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
     sub_vars["index"] = SimpleItoa(i);
     sub_vars["input_type"] = ClassName(method->input_type(), true);
     sub_vars["output_type"] = ClassName(method->output_type(), true);
-    sub_vars["output_typedef"] = ClassName(method->output_type(), false);
+    sub_vars["output_typedef"] = ClassName(method->output_type(), true);
 
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
