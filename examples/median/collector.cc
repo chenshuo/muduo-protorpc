@@ -45,14 +45,14 @@ class RpcClient : boost::noncopyable
   void query(const QueryCallback& cb)
   {
     ::rpc2::Empty req;
-    stub_.Query(req, boost::bind(&RpcClient::queryCb, this, _1, cb));
+    stub_.Query(req, boost::bind(&RpcClient::queryCb, this, _1, cb)); // need C++11 lambda
   }
 
   void search(int64_t guess, const SearchCallback& cb)
   {
     median::SearchRequest req;
     req.set_guess(guess);
-    stub_.Search(req, boost::bind(&RpcClient::searchCb, this, _1, cb));
+    stub_.Search(req, boost::bind(&RpcClient::searchCb, this, _1, cb)); // need C++11 lambda
   }
 
  private:
@@ -118,7 +118,7 @@ class Merger : boost::noncopyable
     CountDownLatch latch(static_cast<int>(sorters_.size()));
     BOOST_FOREACH(RpcClient& sorter, sorters_)
     {
-      sorter.query(boost::bind(&Merger::queryCb, this, &latch, count, min, max, _1, _2, _3));
+      sorter.query(boost::bind(&Merger::queryCb, this, &latch, count, min, max, _1, _2, _3)); // need C++11 lambda
     }
     latch.wait();
   }
@@ -131,7 +131,7 @@ class Merger : boost::noncopyable
     CountDownLatch latch(static_cast<int>(sorters_.size()));
     BOOST_FOREACH(RpcClient& sorter, sorters_)
     {
-      sorter.search(guess, boost::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2));
+      sorter.search(guess, boost::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2)); // need C++11 lambda
     }
     latch.wait();
   }
@@ -189,9 +189,87 @@ std::vector<InetAddress> getAddresses(int argc, char* argv[])
   return result;
 }
 
+// devide towards -inf
+int64_t devide2(int64_t sum)
+{
+  if (sum < 0 && sum % 2 != 0)
+    return sum / 2 - 1;
+  else
+    return sum / 2;
+}
+
 //
 // get the median on all sorters
 //
+int64_t getMedian(Merger* merger, const int64_t count, int64_t min, int64_t max)
+{
+  const int64_t half = count / 2;
+  const bool isEven = (count % 2 == 0);
+
+  int step = 0;
+  int64_t guess = max;
+  while (min <= max)
+  {
+    int64_t smaller = 0;
+    int64_t same = 0;
+    merger->search(guess, &smaller, &same);
+    LOG_INFO << "guess = " << guess
+             << ", smaller = " << smaller
+             << ", same = " << same
+             << ", min = " << min
+             << ", max = " << max;
+    if (++step > 100)
+    {
+      LOG_ERROR << "Algorithm failed, too many steps";
+      break;
+    }
+
+    bool improve = false;
+    if (isEven)
+    {
+      if ((smaller < half) && (smaller + same >= half))
+        break;
+      if (smaller + same < half)
+      {
+        min = guess;
+        improve = true;
+      }
+      else if (smaller >= half)
+      {
+        max = guess;
+        improve = true;
+      }
+    }
+    else
+    {
+      if ((smaller <= half) && (smaller + same > half))
+        break;
+      if (smaller + same <= half)
+      {
+        min = guess;
+        improve = true;
+      }
+      else if (smaller > half)
+      {
+        max = guess;
+        improve = true;
+      }
+    }
+
+    if (improve)
+    {
+      guess = devide2(min + max);
+    }
+    else
+    {
+      LOG_ERROR << "Algorithm failed, no improvement";
+      break;
+    }
+  }
+  LOG_INFO << "Steps = " << step;
+  return guess;
+}
+
 void run(Merger* merger)
 {
   int64_t count = 0;
@@ -203,14 +281,14 @@ void run(Merger* merger)
            << ", min = " << min
            << ", max = " << max;
 
-  int64_t guess = (min + max) / 2;
-  int64_t smaller = 0;
-  int64_t same = 0;
-  merger->search(guess, &smaller, &same);
-  LOG_INFO << "guess = " << guess
-           << ", smaller = " << smaller
-           << ", same = " << same;
-  // FIXME: quick selection
+  if (count <= 0)
+  {
+    LOG_INFO << "***** No median";
+  }
+  else
+  {
+    LOG_INFO << "***** Median is " << getMedian(merger, count, min, max);
+  }
 }
 
 int main(int argc, char* argv[])
@@ -223,7 +301,6 @@ int main(int argc, char* argv[])
     merger.connect();
     LOG_INFO << "All connected";
     run(&merger);
-    sleep(10);
   }
   else
   {
