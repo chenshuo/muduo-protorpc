@@ -11,6 +11,7 @@
 #include <muduo/protorpc2/service.h>
 
 #include <muduo/base/Logging.h>
+#include <muduo/net/Buffer.h>
 #include <muduo/net/protorpc/rpc.pb.h>
 
 #include <google/protobuf/descriptor.h>
@@ -72,11 +73,13 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   message.set_service(method->service()->full_name());
   message.set_method(method->name());
   message.set_request(request.SerializeAsString()); // FIXME: error check
-  RpcCodec::send(conn_, message);
 
   OutstandingCall out = { response, done };
+  {
   MutexLockGuard lock(mutex_);
   outstandings_[id] = out;
+  }
+  RpcCodec::send(conn_, message);
 }
 
 void RpcChannel::onDisconnect()
@@ -88,6 +91,7 @@ void RpcChannel::onMessage(const TcpConnectionPtr& conn,
                            Buffer* buf,
                            Timestamp receiveTime)
 {
+  LOG_TRACE << "RpcChannel::onMessage " << buf->readableBytes();
   codec_.onMessage(conn, buf, receiveTime);
 }
 
@@ -97,12 +101,14 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 {
   assert(conn == conn_);
   //printf("%s\n", message.DebugString().c_str());
+  LOG_TRACE << "RpcChannel::onRpcMessage " << message.DebugString();
   if (message.type() == RESPONSE)
   {
     int64_t id = message.id();
     assert(message.has_response());
 
     OutstandingCall out = { NULL, NULL };
+    bool found = false;
 
     {
       MutexLockGuard lock(mutex_);
@@ -111,7 +117,23 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       {
         out = it->second;
         outstandings_.erase(it);
+        found = true;
       }
+      else
+      {
+#ifndef NDEBUG
+        LOG_WARN << "Size " << outstandings_.size();
+        for (it = outstandings_.begin(); it != outstandings_.end(); ++it)
+        {
+          LOG_WARN << "id " << it->first;
+        }
+#endif
+      }
+    }
+
+    if (!found)
+    {
+      LOG_ERROR << "Unknown RESPONSE";
     }
 
     if (out.response)
@@ -123,6 +145,10 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       {
         out.done(response);
       }
+    }
+    else
+    {
+      LOG_ERROR << "No Response prototype";
     }
   }
   else if (message.type() == REQUEST)
