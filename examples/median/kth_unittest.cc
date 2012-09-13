@@ -4,6 +4,7 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
+#include <iostream>
 #include <limits>
 
 std::vector<int64_t> g_data;
@@ -76,6 +77,56 @@ BOOST_AUTO_TEST_CASE(testTwoElements)
 
 BOOST_AUTO_TEST_CASE(testThreeElements)
 {
-  // TODO
+  int indices[] = { 0, 0, 0, };
+  while (indices[0] < n_values)
+  {
+    int64_t data[] = { values[indices[0]], values[indices[1]], values[indices[2]], };
+    setVec(data);
+    BOOST_CHECK_EQUAL(check(), true);
+
+    ++indices[2];
+    if (indices[2] >= n_values)
+    {
+      indices[2] = 0;
+      ++indices[1];
+      if (indices[1] >= n_values)
+      {
+        indices[1] = 0;
+        ++indices[0];
+      }
+    }
+  }
 }
 
+BOOST_AUTO_TEST_CASE(testFourElements)
+{
+  int indices[] = { 0, 0, 0, 0, };
+  bool running = true;
+  while (running)
+  {
+    // std::copy(indices, indices+4, std::ostream_iterator<int>(std::cout, " "));
+    // std::cout << std::endl;
+    int64_t data[] = { values[indices[0]], values[indices[1]], values[indices[2]], values[indices[3]], };
+    setVec(data);
+    BOOST_CHECK_EQUAL(check(), true);
+
+    int d = 3;
+    while (d >= 0)
+    {
+      ++indices[d];
+      if (indices[d] >= n_values)
+      {
+        if (d == 0)
+        {
+          running = false;
+        }
+        indices[d] = 0;
+        --d;
+      }
+      else
+      {
+        break;
+      }
+    }
+  }
+}
