@@ -44,13 +44,13 @@ class SorterImpl : public Sorter
                       const SearchResponse* responsePrototype,
                       const RpcDoneCallback& done)
   {
-    int64_t value = request->guess();
-    LOG_INFO << "Search " << value;
+    int64_t guess = request->guess();
+    LOG_INFO << "Search " << guess;
     SearchResponse resp;
 
-    std::vector<int64_t>::iterator it = std::lower_bound(data_.begin(), data_.end(), value);
+    std::vector<int64_t>::iterator it = std::lower_bound(data_.begin(), data_.end(), guess);
     resp.set_smaller(it - data_.begin());
-    resp.set_same(std::upper_bound(data_.begin(), data_.end(), value) - it);
+    resp.set_same(std::upper_bound(data_.begin(), data_.end(), guess) - it);
     done(&resp);
   }
 

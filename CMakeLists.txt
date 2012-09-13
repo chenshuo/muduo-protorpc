@@ -56,6 +56,7 @@ link_directories(${Muduo_LIBRARY_DIR})
 
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
+find_library(BOOSTTEST_LIBRARY NAMES boost_unit_test_framework)
 
 find_package(Protobuf REQUIRED)
 find_path(PROTOBUF_PLUGIN google/protobuf/compiler/cpp/cpp_generator.h)

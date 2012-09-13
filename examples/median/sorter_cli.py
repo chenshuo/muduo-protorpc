@@ -12,7 +12,7 @@ if len(sys.argv) < 2:
 	print "Usage:"
 elif sys.argv[1] == 'g':
 	request = median_pb2.GenerateRequest()
-	request.count = 10
+	request.count = 11
 	request.min = 0
 	request.max = 10
 	print sorter.Generate(None, request)

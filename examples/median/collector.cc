@@ -1,5 +1,5 @@
+#include <examples/median/kth.h>
 #include <examples/median/median.pb.h>
-
 #include <muduo/base/CountDownLatch.h>
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>
@@ -189,87 +189,6 @@ std::vector<InetAddress> getAddresses(int argc, char* argv[])
   return result;
 }
 
-// devide towards -inf
-int64_t devide2(int64_t sum)
-{
-  if (sum < 0 && sum % 2 != 0)
-    return sum / 2 - 1;
-  else
-    return sum / 2;
-}
-
-//
-// get the median on all sorters
-//
-int64_t getMedian(Merger* merger, const int64_t count, int64_t min, int64_t max)
-{
-  const int64_t half = count / 2;
-  const bool isEven = (count % 2 == 0);
-
-  int step = 0;
-  int64_t guess = max;
-  while (min <= max)
-  {
-    int64_t smaller = 0;
-    int64_t same = 0;
-    merger->search(guess, &smaller, &same);
-    LOG_INFO << "guess = " << guess
-             << ", smaller = " << smaller
-             << ", same = " << same
-             << ", min = " << min
-             << ", max = " << max;
-    if (++step > 100)
-    {
-      LOG_ERROR << "Algorithm failed, too many steps";
-      break;
-    }
-
-    bool improve = false;
-    if (isEven)
-    {
-      if ((smaller < half) && (smaller + same >= half))
-        break;
-      if (smaller + same < half)
-      {
-        min = guess;
-        improve = true;
-      }
-      else if (smaller >= half)
-      {
-        max = guess;
-        improve = true;
-      }
-    }
-    else
-    {
-      if ((smaller <= half) && (smaller + same > half))
-        break;
-      if (smaller + same <= half)
-      {
-        min = guess;
-        improve = true;
-      }
-      else if (smaller > half)
-      {
-        max = guess;
-        improve = true;
-      }
-    }
-
-    if (improve)
-    {
-      guess = devide2(min + max);
-    }
-    else
-    {
-      LOG_ERROR << "Algorithm failed, no improvement";
-      break;
-    }
-  }
-  LOG_INFO << "Steps = " << step;
-  return guess;
-}
-
 void run(Merger* merger)
 {
   int64_t count = 0;
@@ -287,7 +206,17 @@ void run(Merger* merger)
   }
   else
   {
-    LOG_INFO << "***** Median is " << getMedian(merger, count, min, max);
+    std::pair<int64_t, bool> median = getKth(
+        boost::bind(&Merger::search, merger, _1, _2, _3),
+        (count+1)/2, count, min, max);
+    if (median.second)
+    {
+      LOG_INFO << "***** Median is " << median.first;
+    }
+    else
+    {
+      LOG_ERROR << "***** Median not found";
+    }
   }
 }
 
