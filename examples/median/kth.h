@@ -45,6 +45,7 @@ std::pair<int64_t, bool> getKth(const boost::function<void(int64_t, int64_t*, in
       break;
     }
     guess = min + static_cast<uint64_t>(max - min)/2;
+    assert(min <= guess && guess <= max);
   }
 
   std::pair<int64_t, bool> result(guess, succeed);

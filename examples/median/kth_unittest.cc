@@ -29,7 +29,12 @@ bool check()
   {
     std::pair<int64_t, bool> result = getKth(search, i+1, g_data.size(), g_data.front(), g_data.back());
     if (!(result.second && result.first == g_data[i]))
+    {
+      std::cout << "i = " << i << std::endl;
+      std::copy(g_data.begin(), g_data.end(), std::ostream_iterator<int64_t>(std::cout, " "));
+      std::cout << std::endl;
       return false;
+    }
     LOG_INFO << "***** Result is " << result.first;
   }
   return true;
