@@ -1,0 +1,52 @@
+package wordfreq;
+
+option cc_generic_services = true;
+option java_generic_services = true;
+option py_generic_services = true;
+
+import "muduo/protorpc2/rpc2.proto";
+
+message GetMaxCountResponse {
+  required int64 count = 1;
+}
+
+message GetPeerListResponse {
+  repeated string peers = 1;
+}
+
+message GetHistogramRequest {
+  repeated int64 pivots = 1;
+}
+
+message GetHistogramResponse {
+  repeated int64 counts = 1;
+}
+
+message ShuffleRequest {
+  repeated int64 pivots = 1; // size() == peers.size()
+}
+
+message ShardKeyRequest {
+  required int32 partition = 1;
+  repeated int64 keys = 2; 
+}
+
+// message ShardWordRequest {
+//   required int32 partition = 1;
+//   repeated int64 keys = 2; 
+//   repeated string words = 3; 
+// }
+
+service WordFrequencyService {
+  rpc GetMaxCount(rpc2.Empty) returns (GetMaxCountResponse);
+  rpc GetPeerList(rpc2.Empty) returns (GetPeerListResponse);
+
+  // get count of elements less than or equal to pivots
+  rpc GetHistogram(GetHistogramRequest) returns (GetHistogramResponse);
+
+  rpc ShuffleKey(ShuffleRequest) returns (rpc2.Empty);
+  // rpc ShuffleWord(ShuffleRequest) returns (rpc2.Empty);
+
+  rpc ShardKey(ShardKeyRequest) returns (rpc2.Empty);
+  // rpc ShardWord(ShardWordRequest) returns (rpc2.Empty);
+}

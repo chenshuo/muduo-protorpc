@@ -33,4 +33,5 @@ else()
 endif()
 
 add_subdirectory(median)
+add_subdirectory(wordfreq)
 add_subdirectory(zurg)
