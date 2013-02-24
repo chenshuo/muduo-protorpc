@@ -187,8 +187,7 @@ class Impl : public WordFrequencyService
                         const rpc2::Empty* responsePrototype,
                         const RpcDoneCallback& done)
   {
-    // FIXME
-    LOG_INFO << "ShardKey " << request->DebugString();
+    LOG_DEBUG << "ShardKey " << request->keys_size();
     if (partition_ == -1)
     {
       partition_ = request->partition();
@@ -201,7 +200,6 @@ class Impl : public WordFrequencyService
     }
     partitionKeys_.insert(partitionKeys_.end(), request->keys().begin(), request->keys().end());
     done(&rpc2::Empty::default_instance());
-    LOG_INFO << "ShardKey done";
   }
 
   virtual void SortKey(const ::rpc2::EmptyPtr& request,
@@ -371,7 +369,7 @@ class Impl : public WordFrequencyService
   bool shuffling_;
   size_t concurrentRequests_;
   BlockingQueue<ShardKeyRequest*> freeShards_;
-  const static int kConcurrency = 1;
+  const static int kConcurrency = 4;
   const static int kBatch = 8192;
 
   int partition_;
