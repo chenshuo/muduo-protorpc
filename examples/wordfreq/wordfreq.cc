@@ -108,14 +108,14 @@ class Impl : public WordFrequencyService
     concurrentRequests_ = peers_.size() * kConcurrency;
   }
 
-  virtual void GetMaxKey(const ::rpc2::EmptyPtr& request,
-                         const GetMaxKeyResponse* responsePrototype,
-                         const RpcDoneCallback& done)
+  virtual void GetInfo(const ::rpc2::EmptyPtr& request,
+                       const GetInfoResponse* responsePrototype,
+                       const RpcDoneCallback& done)
   {
-    GetMaxKeyResponse response;
+    GetInfoResponse response;
     response.set_ready(isReady());
-    response.set_count(keys_.size());
     response.set_maxkey(maxKey_);
+    response.set_keycount(keys_.size());
     for (size_t i = 0; i < peerAddresses_.size(); ++i)
     {
       response.add_peers(peerAddresses_[i].toIpPort().c_str());

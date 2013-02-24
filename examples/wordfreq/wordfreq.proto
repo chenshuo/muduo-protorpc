@@ -6,10 +6,10 @@ option py_generic_services = true;
 
 import "muduo/protorpc2/rpc2.proto";
 
-message GetMaxKeyResponse {
+message GetInfoResponse {
   required bool ready = 1;
   required int64 maxKey = 2;
-  required int64 count = 3;
+  required int64 keyCount = 3;
   repeated string peers = 4;
 }
 
@@ -49,7 +49,7 @@ message SortKeyResponse {
 // }
 
 service WordFrequencyService {
-  rpc GetMaxKey(rpc2.Empty) returns (GetMaxKeyResponse);
+  rpc GetInfo(rpc2.Empty) returns (GetInfoResponse);
   rpc Quit(rpc2.Empty) returns (rpc2.Empty);
 
   // get count of elements less than or equal to pivots
