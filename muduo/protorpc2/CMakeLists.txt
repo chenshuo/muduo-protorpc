@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion -Wno-extra")
 include_directories(${PROJECT_BINARY_DIR})
 
 add_library(muduo_protorpc2 RpcChannel.cc RpcServer.cc RpcService.cc rpcservice.pb.cc rpc2.pb.cc)
-target_link_libraries(muduo_protorpc2 muduo_protorpc muduo_net muduo_base protobuf pthread z)
+target_link_libraries(muduo_protorpc2 muduo_protorpc_wire muduo_net muduo_base protobuf pthread z)
 #set_source_files_properties(../protorpc/rpc.pb.cc PROPERTIES GENERATED yes)
 add_dependencies(muduo_protorpc2 protoc-gen-rpc)
 
