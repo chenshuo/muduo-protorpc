@@ -1,6 +1,7 @@
 package muduorpc
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +13,7 @@ import (
 
 type ClientCodec struct {
 	conn io.ReadWriteCloser
+	r    io.Reader
 }
 
 func (c *ClientCodec) WriteRequest(r *rpc.Request, body interface{}) error {
@@ -50,12 +52,11 @@ func (c *ClientCodec) WriteRequest(r *rpc.Request, body interface{}) error {
 	} else if n != len(wire) {
 		return fmt.Errorf("Incomplete write %d of %d bytes", n, len(wire))
 	}
-
-	log.Println(msg)
 	return nil
 }
 
 func (c *ClientCodec) ReadResponseHeader(r *rpc.Response) error {
+	log.Fatal("ReadResponseHeader")
 	return nil
 }
 
@@ -68,5 +69,8 @@ func (c *ClientCodec) Close() error {
 }
 
 func NewClientCodec(conn io.ReadWriteCloser) *ClientCodec {
-	return &ClientCodec{conn}
+	codec := new(ClientCodec)
+	codec.conn = conn
+	codec.r = bufio.NewReader(conn)
+	return codec
 }

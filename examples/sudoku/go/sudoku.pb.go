@@ -70,7 +70,7 @@ type SudokuService interface {
 }
 
 func RegisterSudokuService(service SudokuService) {
-	rpc.Register(service)
+	rpc.RegisterName("SudokuService", service)
 }
 
 func NewSudokuServiceClient(conn io.ReadWriteCloser) *SudokuServiceClient {
@@ -88,5 +88,5 @@ func (c *SudokuServiceClient) Close() error {
 }
 
 func (c *SudokuServiceClient) Solve(req *SudokuRequest, resp *SudokuResponse) error {
-	return c.client.Call("sudoku.SudokuService.Solve", req, resp)
+	return c.client.Call("SudokuService.Solve", req, resp)
 }

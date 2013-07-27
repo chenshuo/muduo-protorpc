@@ -48,13 +48,11 @@ func generateServices(g *generator.Generator, file *generator.FileDescriptor) {
 		if i > 0 {
 			g.P("/////////////////////////////////")
 		}
-		generateService(g, file, s)
+		generateService(g, s)
 	}
 }
 
-func generateService(g *generator.Generator,
-	file *generator.FileDescriptor,
-	s *descriptor.ServiceDescriptorProto) {
+func generateService(g *generator.Generator, s *descriptor.ServiceDescriptorProto) {
 
 	// interface
 	g.P()
@@ -72,7 +70,7 @@ func generateService(g *generator.Generator,
 	g.P()
 	g.P("func Register", s.Name, "(service ", s.Name, ")  {")
 	g.In()
-	g.P("rpc.Register(service)")
+	g.P("rpc.RegisterName(", strconv.Quote(*s.Name), ", service)")
 	g.Out()
 	g.P("}")
 
@@ -109,7 +107,7 @@ func generateService(g *generator.Generator,
 			"(req *", typeName(g, *m.InputType),
 			", resp *", typeName(g, *m.OutputType), ") error {")
 		g.In()
-		name := file.PackageName() + "." + *s.Name + "." + *m.Name
+		name := *s.Name + "." + *m.Name
 		g.P("return c.client.Call(", strconv.Quote(name), ", req, resp)")
 		g.Out()
 		g.P("}")
