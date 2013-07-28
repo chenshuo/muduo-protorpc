@@ -159,7 +159,7 @@ public class RpcChannel implements com.google.protobuf.RpcChannel, BlockingRpcCh
         RpcMessage message = RpcMessage.newBuilder()
                 .setType(MessageType.REQUEST)
                 .setId(callId)
-                .setService(method.getService().getFullName())
+                .setService(method.getService().getName())
                 .setMethod(method.getName())
                 .setRequest(request.toByteString())
                 .build();

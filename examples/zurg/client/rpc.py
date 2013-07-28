@@ -43,7 +43,7 @@ class SyncRpcChannel(service.RpcChannel):
         message.type = rpc_pb2.REQUEST
         self.count += 1
         message.id = self.count
-        message.service = method_descriptor.containing_service.full_name
+        message.service = method_descriptor.containing_service.name
         message.method =  method_descriptor.name
         message.request = request.SerializeToString()
         wire = encode(message)
@@ -71,7 +71,7 @@ class ServerRpcChannel(service.RpcChannel):
                 clientsocket.close()
                 break
             assert message.type == rpc_pb2.REQUEST
-            assert message.service == service.GetDescriptor().full_name
+            assert message.service == service.GetDescriptor().name
             method = service.GetDescriptor().FindMethodByName(message.method)
             request_class = service.GetRequestClass(method)
             request = request_class()
