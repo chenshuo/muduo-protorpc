@@ -96,7 +96,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "static const ::google::protobuf::ServiceDescriptor* descriptor();\n"
     "\n");
 
-  GenerateMethodSignatures(NON_STUB, printer);
+  GenerateMethodSignatures(VIRTUAL, printer);
 
   printer->Print(
     "\n"
@@ -140,7 +140,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
     "// implements $classname$ ------------------------------------------\n"
     "\n");
 
-  GenerateMethodSignatures(STUB, printer);
+  GenerateMethodSignatures(NON_VIRTUAL, printer);
 
   printer->Outdent();
   printer->Print(vars_,
@@ -153,7 +153,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
 }
 
 void ServiceGenerator::GenerateMethodSignatures(
-    StubOrNon stub_or_non, io::Printer* printer) {
+    VirtualOrNon virtual_or_non, io::Printer* printer) {
   if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
   for (int i = 0; i < descriptor_->method_count(); i++) {
     const MethodDescriptor* method = descriptor_->method(i);
@@ -163,9 +163,9 @@ void ServiceGenerator::GenerateMethodSignatures(
     sub_vars["input_type"] = ClassName(method->input_type(), true);
     sub_vars["output_type"] = ClassName(method->output_type(), true);
     sub_vars["output_typedef"] = ClassName(method->output_type(), true);
-    sub_vars["virtual"] = "virtual ";
+    sub_vars["virtual"] = virtual_or_non == VIRTUAL ? "virtual " : "";
 
-    if (stub_or_non == NON_STUB) {
+    if (virtual_or_non == VIRTUAL) {
       printer->Print(sub_vars,
         "$virtual$void $name$(const $input_type$Ptr& request,\n"
         "                     const $output_type$* responsePrototype,\n"

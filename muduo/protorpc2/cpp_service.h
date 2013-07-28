@@ -38,6 +38,7 @@
 #include <map>
 #include <string>
 #include <google/protobuf/stubs/common.h>
+//#include <google/protobuf/compiler/cpp/cpp_options.h>
 #include <google/protobuf/descriptor.h>
 
 namespace google {
@@ -55,7 +56,7 @@ class ServiceGenerator {
  public:
   // See generator.cc for the meaning of dllexport_decl.
   explicit ServiceGenerator(const ServiceDescriptor* descriptor,
-                            const string& dllexport_decl);
+                            const Options& options);
   ~ServiceGenerator();
 
   // Header stuff.
@@ -76,7 +77,6 @@ class ServiceGenerator {
  private:
   enum RequestOrResponse { REQUEST, RESPONSE };
   enum VirtualOrNon { VIRTUAL, NON_VIRTUAL };
-  enum StubOrNon { STUB, NON_STUB };
 
   // Header stuff.
 
@@ -87,7 +87,7 @@ class ServiceGenerator {
   void GenerateStubDefinition(io::Printer* printer);
 
   // Prints signatures for all methods in the
-  void GenerateMethodSignatures(StubOrNon stub_or_non,
+  void GenerateMethodSignatures(VirtualOrNon virtual_or_non,
                                 io::Printer* printer);
 
   // Source file stuff.

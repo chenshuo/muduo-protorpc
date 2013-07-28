@@ -18,12 +18,12 @@ set(CXX_FLAGS
  -Wextra
  # -m32
  -Werror
- -Wconversion
+ -Wno-conversion
  -Wno-unused-parameter
  -Wold-style-cast
  -Woverloaded-virtual
  -Wpointer-arith
- -Wshadow
+ -Wno-shadow
  -Wwrite-strings
  -march=native
  # -MMD

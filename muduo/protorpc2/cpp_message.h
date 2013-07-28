@@ -39,6 +39,7 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/descriptor.h>
 //#include <google/protobuf/compiler/cpp/cpp_field.h>
+//#include <google/protobuf/compiler/cpp/cpp_options.h>
 
 namespace google {
 namespace protobuf {
@@ -55,10 +56,18 @@ class EnumGenerator;           // enum.h
 class ExtensionGenerator;      // extension.h
 class FieldGenerator;          // cpp_field.h
 
+// Generator options:
+struct Options {
+  Options() : safe_boundary_check(false) {
+  }
+  string dllexport_decl;
+  bool safe_boundary_check;
+};
+
 // Convenience class which constructs FieldGenerators for a Descriptor.
 class FieldGeneratorMap {
  public:
-  explicit FieldGeneratorMap(const Descriptor* descriptor);
+  explicit FieldGeneratorMap(const Descriptor* descriptor, const Options& options);
   ~FieldGeneratorMap();
 
   const FieldGenerator& get(const FieldDescriptor* field) const;
@@ -67,7 +76,8 @@ class FieldGeneratorMap {
   const Descriptor* descriptor_;
   scoped_array<scoped_ptr<FieldGenerator> > field_generators_;
 
-  static FieldGenerator* MakeGenerator(const FieldDescriptor* field);
+  static FieldGenerator* MakeGenerator(const FieldDescriptor* field,
+                                       const Options& options);
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldGeneratorMap);
 };
@@ -77,7 +87,7 @@ class MessageGenerator {
  public:
   // See generator.cc for the meaning of dllexport_decl.
   explicit MessageGenerator(const Descriptor* descriptor,
-                            const string& dllexport_decl);
+                            const Options& options);
   ~MessageGenerator();
 
   // Header stuff.
@@ -173,7 +183,7 @@ class MessageGenerator {
 
   const Descriptor* descriptor_;
   string classname_;
-  string dllexport_decl_;
+  Options options_;
   FieldGeneratorMap field_generators_;
   scoped_array<scoped_ptr<MessageGenerator> > nested_generators_;
   scoped_array<scoped_ptr<EnumGenerator> > enum_generators_;
