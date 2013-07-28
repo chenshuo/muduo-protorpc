@@ -66,16 +66,17 @@ func (c *ClientCodec) ReadResponseHeader(r *rpc.Response) (err error) {
 		return
 	}
 
-	// FIXME: check msg.Type
+	if *msg.Type != *MessageType_RESPONSE.Enum() {
+		err = fmt.Errorf("Wrong message type.")
+		return
+	}
 
-	// r.ServiceMethod = *msg.Service + "." + *msg.Method
 	r.Seq = *msg.Id
 	c.payload = msg.Response
 	return nil
 }
 
-// FIXME: merge dup code with
-// func (c *ServerCodec) ReadRequestBody(body interface{}) error
+// FIXME: merge dup code with ServerCodec.ReadRequestBody()
 func (c *ClientCodec) ReadResponseBody(body interface{}) (err error) {
 	if c.payload == nil {
 		panic("payload is nil")

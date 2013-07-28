@@ -3,6 +3,7 @@ package muduorpc
 import (
 	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
+	"fmt"
 	"hash/adler32"
 	"io"
 )
@@ -50,7 +51,16 @@ func Decode(r io.Reader) (msg *RpcMessage, err error) {
 		return
 	}
 
-	// FIXME: check "RPC0" and checksum
+	if string(payload[:4]) != "RPC0" {
+		err = fmt.Errorf("Wrong marker")
+		return
+	}
+
+	checksum := adler32.Checksum(payload[:length-4])
+	if checksum != binary.BigEndian.Uint32(payload[length-4:]) {
+		err = fmt.Errorf("Wrong checksum")
+		return
+	}
 
 	msg = new(RpcMessage)
 	err = proto.Unmarshal(payload[4:length-4], msg)

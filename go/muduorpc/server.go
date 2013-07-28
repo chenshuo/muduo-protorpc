@@ -27,7 +27,10 @@ func (c *ServerCodec) ReadRequestHeader(r *rpc.Request) (err error) {
 		return
 	}
 
-	// FIXME: check msg.Type
+	if *msg.Type != *MessageType_REQUEST.Enum() {
+		err = fmt.Errorf("Wrong message type.")
+		return
+	}
 
 	r.ServiceMethod = *msg.Service + "." + *msg.Method
 	r.Seq = *msg.Id
