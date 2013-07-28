@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"net/rpc"
 	"strings"
 
@@ -12,8 +11,9 @@ import (
 )
 
 type ClientCodec struct {
-	conn io.ReadWriteCloser
-	r    io.Reader
+	conn    io.ReadWriteCloser
+	r       io.Reader
+	payload []byte
 }
 
 func (c *ClientCodec) WriteRequest(r *rpc.Request, body interface{}) error {
@@ -55,13 +55,44 @@ func (c *ClientCodec) WriteRequest(r *rpc.Request, body interface{}) error {
 	return nil
 }
 
-func (c *ClientCodec) ReadResponseHeader(r *rpc.Response) error {
-	log.Fatal("ReadResponseHeader")
+func (c *ClientCodec) ReadResponseHeader(r *rpc.Response) (err error) {
+	if c.payload != nil {
+		panic("payload is not nil")
+	}
+
+	var msg *RpcMessage
+	msg, err = Decode(c.r)
+	if err != nil {
+		return
+	}
+
+	// FIXME: check msg.Type
+
+	// r.ServiceMethod = *msg.Service + "." + *msg.Method
+	r.Seq = *msg.Id
+	c.payload = msg.Response
 	return nil
 }
 
-func (c *ClientCodec) ReadResponseBody(body interface{}) error {
-	return nil
+// FIXME: merge dup code with
+// func (c *ServerCodec) ReadRequestBody(body interface{}) error
+func (c *ClientCodec) ReadResponseBody(body interface{}) (err error) {
+	if c.payload == nil {
+		panic("payload is nil")
+	}
+
+	msg, ok := body.(proto.Message)
+	if !ok {
+		return fmt.Errorf("body is not a protobuf Message")
+	}
+
+	err = proto.Unmarshal(c.payload, msg)
+	if err != nil {
+		return
+	}
+
+	c.payload = nil
+	return
 }
 
 func (c *ClientCodec) Close() error {

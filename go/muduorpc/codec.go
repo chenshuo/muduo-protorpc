@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
 	"hash/adler32"
+	"io"
 )
 
 // FIXME: find better way of writing this
@@ -33,4 +34,25 @@ func Encode(msg *RpcMessage) ([]byte, error) {
 	binary.BigEndian.PutUint32(wire[8+len(payload):], checksum)
 
 	return wire, nil
+}
+
+func Decode(r io.Reader) (msg *RpcMessage, err error) {
+	header := make([]byte, 4)
+	_, err = io.ReadFull(r, header)
+	if err != nil {
+		return
+	}
+
+	length := binary.BigEndian.Uint32(header)
+	payload := make([]byte, length)
+	_, err = io.ReadFull(r, payload)
+	if err != nil {
+		return
+	}
+
+	// FIXME: check "RPC0" and checksum
+
+	msg = new(RpcMessage)
+	err = proto.Unmarshal(payload[4:length-4], msg)
+	return
 }

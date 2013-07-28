@@ -3,7 +3,6 @@ package muduorpc
 import (
 	"bufio"
 	"code.google.com/p/goprotobuf/proto"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
@@ -12,63 +11,77 @@ import (
 )
 
 type ServerCodec struct {
-	conn io.ReadWriteCloser
-	r    io.Reader
-	reqb  []byte
+	conn    io.ReadWriteCloser
+	r       io.Reader
+	payload []byte
 }
 
-func (c *ServerCodec) ReadRequestHeader(req *rpc.Request) (err error) {
-	if c.reqb != nil {
-		panic("reqb is not nil")
+func (c *ServerCodec) ReadRequestHeader(r *rpc.Request) (err error) {
+	if c.payload != nil {
+		panic("payload is not nil")
 	}
-	header := make([]byte, 4)
-	_, err = io.ReadFull(c.r, header)
+
+	var msg *RpcMessage
+	msg, err = Decode(c.r)
 	if err != nil {
 		return
 	}
 
-	length := binary.BigEndian.Uint32(header)
-	payload := make([]byte, length)
-	_, err = io.ReadFull(c.r, payload)
-	if err != nil {
-		return
-	}
+	// FIXME: check msg.Type
 
-	// FIXME: check "RPC0" and checksum
-
-	msg := new(RpcMessage)
-	err = proto.Unmarshal(payload[4 : length-4], msg)
-	if err != nil {
-		return
-	}
-
-	req.ServiceMethod = *msg.Service + "." + *msg.Method
-	req.Seq = *msg.Id
-	c.reqb = msg.Request
+	r.ServiceMethod = *msg.Service + "." + *msg.Method
+	r.Seq = *msg.Id
+	c.payload = msg.Request
 	return nil
 }
 
-func (c *ServerCodec) ReadRequestBody(req interface{}) error {
-	if c.reqb == nil {
-		panic("reqb is nil")
+func (c *ServerCodec) ReadRequestBody(body interface{}) (err error) {
+	if c.payload == nil {
+		panic("payload is nil")
 	}
 
-	msg, ok := req.(proto.Message)
+	msg, ok := body.(proto.Message)
 	if !ok {
-		return fmt.Errorf("req is not a protobuf Message")
+		return fmt.Errorf("body is not a protobuf Message")
 	}
 
-	err := proto.Unmarshal(c.reqb, msg)
+	err = proto.Unmarshal(c.payload, msg)
+	if err != nil {
+		return
+	}
+
+	c.payload = nil
+	return
+}
+
+func (c *ServerCodec) WriteResponse(r *rpc.Response, body interface{}) error {
+	msg := new(RpcMessage)
+	msg.Type = MessageType_RESPONSE.Enum()
+	msg.Id = &r.Seq
+
+	pb, ok := body.(proto.Message)
+	if !ok {
+		return fmt.Errorf("not a protobuf Message")
+	}
+
+	b, err := proto.Marshal(pb)
 	if err != nil {
 		return err
 	}
 
-	c.reqb = nil
-	return nil
-}
+	msg.Response = b
 
-func (c *ServerCodec) WriteResponse(*rpc.Response, interface{}) error {
-	log.Fatal("WriteResponse")
+	wire, err := Encode(msg)
+	if err != nil {
+		return err
+	}
+
+	n, err := c.conn.Write(wire)
+	if err != nil {
+		return err
+	} else if n != len(wire) {
+		return fmt.Errorf("Incomplete write %d of %d bytes", n, len(wire))
+	}
 	return nil
 }
 
