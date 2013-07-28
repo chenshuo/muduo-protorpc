@@ -1,11 +1,12 @@
 package muduorpc
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
 	"fmt"
 	"hash/adler32"
 	"io"
+
+	"code.google.com/p/goprotobuf/proto"
 )
 
 // FIXME: find better way of writing this

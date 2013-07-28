@@ -2,12 +2,13 @@ package muduorpc
 
 import (
 	"bufio"
-	"code.google.com/p/goprotobuf/proto"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/rpc"
+
+	"code.google.com/p/goprotobuf/proto"
 )
 
 type ServerCodec struct {
