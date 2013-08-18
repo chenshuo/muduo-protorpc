@@ -25,11 +25,18 @@ target_link_libraries(muduo_protorpc2 muduo_protorpc_wire muduo_net muduo_base p
 #set_source_files_properties(../protorpc/rpc.pb.cc PROPERTIES GENERATED yes)
 add_dependencies(muduo_protorpc2 protoc-gen-rpc)
 
+add_library(muduo_protorpc2_cpp11 RpcChannel.cc RpcServer.cc RpcService.cc rpcservice.pb.cc rpc2.pb.cc)
+target_link_libraries(muduo_protorpc2_cpp11 muduo_protorpc_wire_cpp11 muduo_net_cpp11 muduo_base_cpp11 protobuf pthread z)
+add_dependencies(muduo_protorpc2_cpp11 protoc-gen-rpc)
+
 install(TARGETS protoc-gen-rpc DESTINATION bin)
 install(TARGETS muduo_protorpc2 DESTINATION lib)
+install(TARGETS muduo_protorpc2_cpp11 DESTINATION lib)
 set(HEADERS
   RpcChannel.h
   RpcServer.h
   RpcService.h
+  service.h
+  ${PROJECT_BINARY_DIR}/muduo/protorpc2/rpcservice.pb.h
   )
 install(FILES ${HEADERS} DESTINATION include/muduo/protorpc2)

@@ -21,7 +21,7 @@ using namespace muduo;
 using namespace muduo::net;
 
 RpcServer::RpcServer(EventLoop* loop,
-                       const InetAddress& listenAddr)
+                     const InetAddress& listenAddr)
   : loop_(loop),
     server_(loop, listenAddr, "RpcServer"),
     services_(),

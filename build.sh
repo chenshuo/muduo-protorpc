@@ -5,7 +5,7 @@ set -x
 SOURCE_DIR=`pwd`
 BUILD_DIR=${BUILD_DIR:-../build}
 BUILD_TYPE=${BUILD_TYPE:-debug}
-INSTALL_DIR=${INSTALL_DIR:-../protorpc-${BUILD_TYPE}-install}
+INSTALL_DIR=${INSTALL_DIR:-../${BUILD_TYPE}-install}
 MUDUO_DIR=${MUDUO_DIR:-${PWD}/$BUILD_DIR/${BUILD_TYPE}-install}
 
 mkdir -p $BUILD_DIR/protorpc-$BUILD_TYPE\
