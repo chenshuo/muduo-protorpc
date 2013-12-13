@@ -1,0 +1,22 @@
+package nqueens;
+
+option cc_generic_services = true;
+option java_generic_services = true;
+option py_generic_services = true;
+
+import "muduo/protorpc2/rpc2.proto";
+
+message SubProblemRequest {
+  required int32 nqueens = 1;
+  required int32 first_row = 2;
+  optional int32 second_row = 3 [default = -1];
+}
+
+message SubProblemResponse {
+  required int64 count = 1;
+  required double seconds = 2;
+}
+
+service NQueensService {
+  rpc Solve(SubProblemRequest) returns (SubProblemResponse);
+}
