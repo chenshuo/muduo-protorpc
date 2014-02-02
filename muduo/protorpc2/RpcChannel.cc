@@ -79,7 +79,7 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   MutexLockGuard lock(mutex_);
   outstandings_[id] = out;
   }
-  RpcCodec::send(conn_, message);
+  codec_.send(conn_, message);
 }
 
 void RpcChannel::onDisconnect()
@@ -209,6 +209,6 @@ void RpcChannel::doneCallback(const ::google::protobuf::Message* responsePrototy
   message.set_type(RESPONSE);
   message.set_id(id);
   message.set_response(response->SerializeAsString()); // FIXME: error check
-  RpcCodec::send(conn_, message);
+  codec_.send(conn_, message);
 }
 
