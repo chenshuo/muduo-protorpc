@@ -114,7 +114,7 @@ struct ProcStatFile
   {
     char filename[64];
     ::snprintf(filename, sizeof filename, "/proc/%d/stat", pid);
-    muduo::FileUtil::SmallFile file(filename);
+    muduo::FileUtil::ReadSmallFile file(filename);
     if ( (error = file.readToBuffer(NULL)) == 0)
     {
       valid = true;

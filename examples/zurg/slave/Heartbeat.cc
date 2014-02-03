@@ -21,7 +21,7 @@ void ignoreCallback(const ::rpc2::EmptyPtr&)
 }
 
 // unique_ptr is better
-typedef boost::shared_ptr<muduo::FileUtil::SmallFile> SmallFilePtr;
+typedef boost::shared_ptr<muduo::FileUtil::ReadSmallFile> SmallFilePtr;
 
 class ProcFs : boost::noncopyable
 {
@@ -34,7 +34,7 @@ class ProcFs : boost::noncopyable
     FileMap::iterator it = files_.find(filename);
     if (it == files_.end())
     {
-      SmallFilePtr ptr(new muduo::FileUtil::SmallFile(filename));
+      SmallFilePtr ptr(new muduo::FileUtil::ReadSmallFile(filename));
       it = files_.insert(std::make_pair(filename, ptr)).first;
     }
     assert (it != files_.end());
