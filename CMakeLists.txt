@@ -62,6 +62,7 @@ find_package(Protobuf REQUIRED)
 find_path(PROTOBUF_PLUGIN google/protobuf/compiler/cpp/cpp_generator.h)
 
 include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_BINARY_DIR})
 
 if(NOT muduo_protorpc_wire)
   message(SEND_ERROR "Cannot find libmuduo_protorpc_wire, did you install protobuf?")

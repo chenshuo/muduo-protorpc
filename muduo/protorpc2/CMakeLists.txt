@@ -21,12 +21,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion -Wno-extra")
 include_directories(${PROJECT_BINARY_DIR})
 
 add_library(muduo_protorpc2 RpcChannel.cc RpcServer.cc RpcService.cc rpcservice.pb.cc rpc2.pb.cc)
-target_link_libraries(muduo_protorpc2 muduo_protorpc_wire muduo_protobuf_codec muduo_net muduo_base protobuf pthread z)
+target_link_libraries(muduo_protorpc2 muduo_protorpc_wire muduo_protobuf_codec muduo_net muduo_base protobuf pthread rt z)
 #set_source_files_properties(../protorpc/rpc.pb.cc PROPERTIES GENERATED yes)
+set_source_files_properties(rpc2.pb.cc rpcservice.pb.cc PROPERTIES COMPILE_FLAGS "-Wno-conversion")
 add_dependencies(muduo_protorpc2 protoc-gen-rpc)
 
 add_library(muduo_protorpc2_cpp11 RpcChannel.cc RpcServer.cc RpcService.cc rpcservice.pb.cc rpc2.pb.cc)
-target_link_libraries(muduo_protorpc2_cpp11 muduo_protorpc_wire_cpp11 muduo_net_cpp11 muduo_base_cpp11 protobuf pthread z)
+target_link_libraries(muduo_protorpc2_cpp11 muduo_protorpc_wire_cpp11 muduo_net_cpp11 muduo_base_cpp11 protobuf pthread rt z)
 add_dependencies(muduo_protorpc2_cpp11 protoc-gen-rpc)
 
 install(TARGETS protoc-gen-rpc DESTINATION bin)

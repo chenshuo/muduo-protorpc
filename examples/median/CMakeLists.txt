@@ -1,11 +1,7 @@
 PROTOBUF_GENERATE_RPC(PROTO_SRCS median.proto)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion -Wno-extra")
-include_directories(${PROJECT_BINARY_DIR})
-
 add_library(median_proto ${PROTO_SRCS})
-
-#TODO set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion")
+set_source_files_properties(${PROTO_SRCS} PROPERTIES COMPILE_FLAGS "-Wno-conversion")
 
 add_executable(median_sorter sorter.cc)
 target_link_libraries(median_sorter median_proto muduo_protorpc2)
