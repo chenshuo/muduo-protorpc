@@ -17,9 +17,6 @@ add_custom_command(OUTPUT rpcservice.pb.cc rpcservice.pb.h rpc2.pb.h rpc2.pb.cc
   DEPENDS protoc-gen-rpc
   VERBATIM )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=conversion -Wno-extra")
-include_directories(${PROJECT_BINARY_DIR})
-
 add_library(muduo_protorpc2 RpcChannel.cc RpcServer.cc RpcService.cc rpcservice.pb.cc rpc2.pb.cc)
 target_link_libraries(muduo_protorpc2 muduo_protorpc_wire muduo_protobuf_codec muduo_net muduo_base protobuf pthread rt z)
 #set_source_files_properties(../protorpc/rpc.pb.cc PROPERTIES GENERATED yes)
