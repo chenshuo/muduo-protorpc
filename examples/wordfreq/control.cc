@@ -194,7 +194,7 @@ class Controller : boost::noncopyable
       {
         std::string ip = addr.substr(0, colon);
         uint16_t port = static_cast<uint16_t>(atoi(addr.c_str()+colon+1));
-        clients_.push_back(new RpcClient(loop_, InetAddress(ip, port), this));
+        clients_.push_back(new RpcClient(loop_, InetAddress(ip.c_str(), port), this));
       }
       else
       {

@@ -53,7 +53,7 @@ void SlaveServiceImpl::getFileContent(const GetFileContentRequestPtr& request,
   int64_t file_size = 0;
   int64_t modify_time = 0;
   int64_t create_time = 0;
-  int err = muduo::FileUtil::readFile(request->file_name(),
+  int err = muduo::FileUtil::readFile(request->file_name().c_str(),
                                       request->max_size(),
                                       response.mutable_content(),
                                       &file_size,
