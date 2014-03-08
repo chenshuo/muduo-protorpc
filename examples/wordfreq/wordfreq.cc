@@ -3,6 +3,7 @@
 #include <muduo/base/BlockingQueue.h>
 #include <muduo/base/CountDownLatch.h>
 #include <muduo/base/Logging.h>
+#include <muduo/base/Thread.h>
 #include <muduo/net/EventLoop.h>
 #include <muduo/net/TcpClient.h>
 #include <muduo/net/TcpServer.h>
