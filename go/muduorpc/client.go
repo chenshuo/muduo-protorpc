@@ -41,18 +41,7 @@ func (c *ClientCodec) WriteRequest(r *rpc.Request, body interface{}) error {
 
 	msg.Request = b
 
-	wire, err := Encode(msg)
-	if err != nil {
-		return err
-	}
-
-	n, err := c.conn.Write(wire)
-	if err != nil {
-		return err
-	} else if n != len(wire) {
-		return fmt.Errorf("Incomplete write %d of %d bytes", n, len(wire))
-	}
-	return nil
+	return Send(c.conn, msg)
 }
 
 func (c *ClientCodec) ReadResponseHeader(r *rpc.Response) (err error) {

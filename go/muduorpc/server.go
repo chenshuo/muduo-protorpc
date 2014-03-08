@@ -75,18 +75,7 @@ func (c *ServerCodec) WriteResponse(r *rpc.Response, body interface{}) error {
 
 	msg.Response = b
 
-	wire, err := Encode(msg)
-	if err != nil {
-		return err
-	}
-
-	n, err := c.conn.Write(wire)
-	if err != nil {
-		return err
-	} else if n != len(wire) {
-		return fmt.Errorf("Incomplete write %d of %d bytes", n, len(wire))
-	}
-	return nil
+	return Send(c.conn, msg)
 }
 
 func (c *ServerCodec) Close() error {

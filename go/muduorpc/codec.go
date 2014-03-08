@@ -10,7 +10,7 @@ import (
 )
 
 // FIXME: find better way of writing this
-func Encode(msg *RpcMessage) ([]byte, error) {
+func encode(msg *RpcMessage) ([]byte, error) {
 	payload, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
@@ -38,6 +38,22 @@ func Encode(msg *RpcMessage) ([]byte, error) {
 	return wire, nil
 }
 
+func Send(c io.Writer, msg *RpcMessage) error {
+	wire, err := encode(msg)
+	if err != nil {
+		return err
+	}
+
+	n, err := c.Write(wire)
+	if err != nil {
+		return err
+	} else if n != len(wire) {
+		return fmt.Errorf("Incomplete write %d of %d bytes", n, len(wire))
+	}
+
+	return nil
+}
+
 func Decode(r io.Reader) (msg *RpcMessage, err error) {
 	header := make([]byte, 4)
 	_, err = io.ReadFull(r, header)
@@ -46,6 +62,11 @@ func Decode(r io.Reader) (msg *RpcMessage, err error) {
 	}
 
 	length := binary.BigEndian.Uint32(header)
+	if length > 64*1024*1024 {
+		err = fmt.Errorf("Invalid length %d", length)
+		return
+	}
+
 	payload := make([]byte, length)
 	_, err = io.ReadFull(r, payload)
 	if err != nil {
