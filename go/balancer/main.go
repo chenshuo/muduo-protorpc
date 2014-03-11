@@ -79,6 +79,7 @@ func (b *balancer) ServeConn(c net.Conn) {
 func (b *balancer) dispatch() {
 	idx := 0
 	for r := range b.requests {
+		// FIXME: send to next if blocking, otherwise a slow backend could block everything.
 		b.backends[idx].requests <- r
 		idx++
 		if idx >= len(b.backends) {
