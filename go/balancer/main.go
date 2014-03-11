@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"runtime"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/chenshuo/muduo-examples-in-go/muduo"
 	"github.com/chenshuo/muduo-protorpc/go/muduorpc"
@@ -32,21 +35,22 @@ func init() {
 type balancer struct {
 	listener net.Listener
 	requests chan request
-	backends []backendConn
+	backends []*backendConn
 }
 
 type request struct {
-	msg  *muduorpc.RpcMessage
-	resp chan *muduorpc.RpcMessage
+	msg    *muduorpc.RpcMessage
+	output chan *muduorpc.RpcMessage
 }
 
 func (b *balancer) ServeConn(c net.Conn) {
-	resp := make(chan *muduorpc.RpcMessage, 10) // size ?
-	defer close(resp)
+	output := make(chan *muduorpc.RpcMessage, 10) // size ?
+	defer close(output)
+	// FIXME: cancel outstandings, otherwise memory leak
 
 	go func() {
 		defer c.Close()
-		for msg := range resp {
+		for msg := range output {
 			err := muduorpc.Send(c, msg)
 			if err != nil {
 				log.Println(err)
@@ -67,7 +71,7 @@ func (b *balancer) ServeConn(c net.Conn) {
 			break
 		}
 		// log.Printf("%v.%v %v req\n", *msg.Service, *msg.Method, *msg.Id)
-		req := request{msg: msg, resp: resp}
+		req := request{msg: msg, output: output}
 		b.requests <- req
 	}
 }
@@ -83,34 +87,63 @@ func (b *balancer) dispatch() {
 	}
 }
 
-type backendConn struct {
-	name     string
-	conn     net.Conn
-	requests chan request
+type response struct {
+	origId uint64
+	output chan *muduorpc.RpcMessage
 }
 
-func newBackend(addr string) backendConn {
+type backendConn struct {
+	name        string
+	conn        net.Conn
+	requests    chan request
+	mu          sync.Mutex
+	outstanding map[uint64]response
+}
+
+func newBackend(addr string) *backendConn {
 	conn, err := net.Dial("tcp", addr)
 	muduo.PanicOnError(err)
-	return backendConn{
-		name:     addr,
-		conn:     conn,
-		requests: make(chan request, 10),
+	return &backendConn{
+		name:        addr,
+		conn:        conn,
+		requests:    make(chan request, 10),
+		outstanding: make(map[uint64]response),
 	}
 }
 
 func (b *backendConn) run() {
-	// FIXME: async
-	for r := range b.requests {
+	go func() {
+		defer b.conn.Close()
+		for {
+			resp, err := muduorpc.Decode(b.conn)
+			if err != nil {
+				// FIXME: reject outstandings
+				close(b.requests)
+			}
+			b.mu.Lock()
+			r, ok := b.outstanding[resp.GetId()]
+			if ok {
+				delete(b.outstanding, resp.GetId())
+			} else {
+				panic("What's wrong?")
+			}
+			b.mu.Unlock()
+			resp.Id = &r.origId
+			r.output <- resp
+		}
+	}()
 
-		//log.Println(b.name, "req", *r.msg.Id)
+	var nextId uint64 = 100
+	for r := range b.requests {
+		resp := response{r.msg.GetId(), r.output}
+		var newId uint64 = nextId
+		nextId++
+		b.mu.Lock()
+		b.outstanding[newId] = resp
+		b.mu.Unlock()
+		r.msg.Id = &newId
 		err := muduorpc.Send(b.conn, r.msg)
 		muduo.PanicOnError(err)
-		var resp *muduorpc.RpcMessage
-		//log.Println(b.name, "decoding")
-		resp, err = muduorpc.Decode(b.conn)
-		//log.Println(b.name, "decoded")
-		r.resp <- resp
 	}
 }
 
@@ -122,7 +155,7 @@ func NewBalancer(port int, backendS string) *balancer {
 	log.Printf("backends: %q\n", backends)
 	s := &balancer{
 		requests: make(chan request, 1024), // size ?
-		backends: make([]backendConn, len(backends)),
+		backends: make([]*backendConn, len(backends)),
 	}
 	for i, addr := range backends {
 		s.backends[i] = newBackend(addr)
@@ -136,6 +169,14 @@ func NewBalancer(port int, backendS string) *balancer {
 
 func main() {
 	flag.Parse()
+
+	ticker := time.NewTicker(time.Second * 2)
+	defer ticker.Stop()
+	go func() {
+		for _ = range ticker.C {
+			fmt.Println("# goroutine", runtime.NumGoroutine())
+		}
+	}()
 
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 	s := NewBalancer(opt.port, opt.backends)

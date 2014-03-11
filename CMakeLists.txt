@@ -43,6 +43,9 @@ set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Muduo_LIBRARY_DIR})
 message(STATUS "Muduo include " ${Muduo_INCLUDE_DIR})
 message(STATUS "Muduo lib " ${Muduo_LIBRARY_DIR})
 
+include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_BINARY_DIR})
+
 include_directories(${Muduo_INCLUDE_DIR})
 find_library(muduo_base muduo_base)
 find_library(muduo_net muduo_net)
@@ -60,9 +63,6 @@ find_library(BOOSTTEST_LIBRARY NAMES boost_unit_test_framework)
 
 find_package(Protobuf REQUIRED)
 find_path(PROTOBUF_PLUGIN google/protobuf/compiler/cpp/cpp_generator.h)
-
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_BINARY_DIR})
 
 if(NOT muduo_protorpc_wire)
   message(SEND_ERROR "Cannot find libmuduo_protorpc_wire, did you install protobuf?")

@@ -96,11 +96,12 @@ void RpcChannel::onMessage(const TcpConnectionPtr& conn,
 }
 
 void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
-                              const RpcMessage& message,
+                              const RpcMessagePtr& messagePtr,
                               Timestamp receiveTime)
 {
   assert(conn == conn_);
   //printf("%s\n", message.DebugString().c_str());
+  RpcMessage& message = *messagePtr;
   LOG_TRACE << "RpcChannel::onRpcMessage " << message.DebugString();
   if (message.type() == RESPONSE)
   {

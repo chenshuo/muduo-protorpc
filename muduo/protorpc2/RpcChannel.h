@@ -187,7 +187,7 @@ class RpcChannel : boost::noncopyable
 
  private:
   void onRpcMessage(const TcpConnectionPtr& conn,
-                    const RpcMessage& message,
+                    const RpcMessagePtr& messagePtr,
                     Timestamp receiveTime);
 
   void callServiceMethod(const RpcMessage& message);

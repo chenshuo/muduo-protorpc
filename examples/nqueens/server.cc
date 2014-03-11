@@ -126,9 +126,10 @@ int main(int argc, char* argv[])
 {
   LOG_INFO << "pid = " << getpid();
   EventLoop loop;
-  InetAddress listenAddr(9352);
   int threads = argc > 1 ? atoi(argv[1]) : 0;
   nqueens::NQueensServiceImpl impl(threads);
+  int port = argc > 2 ? atoi(argv[2]) : 9352;
+  InetAddress listenAddr(static_cast<uint16_t>(port));
   RpcServer server(&loop, listenAddr);
   server.registerService(&impl);
   server.start();
