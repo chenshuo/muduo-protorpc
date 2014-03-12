@@ -27,6 +27,11 @@ add_library(muduo_protorpc2_cpp11 RpcChannel.cc RpcServer.cc RpcService.cc rpcse
 target_link_libraries(muduo_protorpc2_cpp11 muduo_protorpc_wire_cpp11 muduo_net_cpp11 muduo_base_cpp11 protobuf pthread rt z)
 add_dependencies(muduo_protorpc2_cpp11 protoc-gen-rpc)
 
+if(TCMALLOC_INCLUDE_DIR AND TCMALLOC_LIBRARY)
+  target_link_libraries(muduo_protorpc2 tcmalloc_and_profiler)
+  target_link_libraries(muduo_protorpc2_cpp11 tcmalloc_and_profiler)
+endif()
+
 install(TARGETS protoc-gen-rpc DESTINATION bin)
 install(TARGETS muduo_protorpc2 DESTINATION lib)
 install(TARGETS muduo_protorpc2_cpp11 DESTINATION lib)

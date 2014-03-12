@@ -170,8 +170,9 @@ func NewBalancer(port int, backendS string) *balancer {
 
 func main() {
 	flag.Parse()
+	runtime.GOMAXPROCS(4)
 
-	ticker := time.NewTicker(time.Second * 2)
+	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 	go func() {
 		for _ = range ticker.C {

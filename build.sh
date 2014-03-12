@@ -10,7 +10,7 @@ MUDUO_DIR=${MUDUO_DIR:-${PWD}/$BUILD_DIR/${BUILD_TYPE}-install}
 
 mkdir -p $BUILD_DIR/protorpc-$BUILD_TYPE\
   && cd $BUILD_DIR/protorpc-$BUILD_TYPE \
-  && cmake --graphviz=dep.dot \
+  && cmake \
            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
            -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
            -DMUDUO_PATH=$MUDUO_DIR $SOURCE_DIR \
