@@ -15,8 +15,6 @@
 
 #include <google/protobuf/descriptor.h>
 
-#include <boost/bind.hpp>
-
 using namespace muduo;
 using namespace muduo::net;
 
@@ -28,9 +26,9 @@ RpcServer::RpcServer(EventLoop* loop,
     metaService_(&services_)
 {
   server_.setConnectionCallback(
-      boost::bind(&RpcServer::onConnection, this, _1));
+      std::bind(&RpcServer::onConnection, this, _1));
 //   server_.setMessageCallback(
-//       boost::bind(&RpcServer::onMessage, this, _1, _2, _3));
+//       std::bind(&RpcServer::onMessage, this, _1, _2, _3));
 
   registerService(&metaService_);
 }
@@ -56,7 +54,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     RpcChannelPtr channel(new RpcChannel(conn));
     channel->setServices(&services_);
     conn->setMessageCallback(
-        boost::bind(&RpcChannel::onMessage, get_pointer(channel), _1, _2, _3));
+        std::bind(&RpcChannel::onMessage, get_pointer(channel), _1, _2, _3));
     conn->setContext(channel);
   }
   else

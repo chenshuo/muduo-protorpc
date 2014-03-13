@@ -1,7 +1,6 @@
 #ifndef MUDUO_PROTORPC_ZURG_HEARTBEAT_H
 #define MUDUO_PROTORPC_ZURG_HEARTBEAT_H
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <muduo/base/Types.h>
@@ -21,7 +20,7 @@ class MasterService_Stub;
 class SlaveConfig;
 class ProcFs;
 
-class Heartbeat : boost::noncopyable
+class Heartbeat : muduo::noncopyable
 {
  public:
   Heartbeat(muduo::net::EventLoop* loop,

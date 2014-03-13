@@ -3,7 +3,6 @@
 
 #include <muduo/net/EventLoop.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace muduo
@@ -21,7 +20,7 @@ class RpcClient;
 class SlaveConfig;
 class SlaveServiceImpl;
 
-class SlaveApp : boost::noncopyable
+class SlaveApp : muduo::noncopyable
 {
  public:
   explicit SlaveApp(const SlaveConfig&);

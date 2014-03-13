@@ -53,7 +53,7 @@ int redirect(bool toFile, const std::string& prefix, const char* postfix)
   return fd;
 }
 
-class Pipe : boost::noncopyable
+class Pipe : muduo::noncopyable
 {
  public:
   Pipe()

@@ -99,7 +99,7 @@ class NQueensServiceImpl : public NQueensService
                      const RpcDoneCallback& done)
   {
     LOG_INFO << "NQueensServiceImpl::Solve " << request->ShortDebugString();
-    pool_.run(boost::bind(&NQueensServiceImpl::doSolve, request, done));
+    pool_.run(std::bind(&NQueensServiceImpl::doSolve, request, done));
   }
 
 

@@ -9,8 +9,8 @@ namespace zurg
 {
 
 // a minimal TcpConnection which only receives.
-class Sink : public boost::enable_shared_from_this<Sink>,
-             boost::noncopyable
+class Sink : public std::enable_shared_from_this<Sink>,
+             muduo::noncopyable
 {
  public:
   Sink(muduo::net::EventLoop* loop, int fd, int maxLength, const char* which)
@@ -20,9 +20,10 @@ class Sink : public boost::enable_shared_from_this<Sink>,
       whoami_(which),
       ch_(loop, fd_)
   {
+    using std::placeholders::_1;
     LOG_TRACE << whoami_ << fd_;
-    ch_.setReadCallback(boost::bind(&Sink::onRead, this, _1));
-    ch_.setCloseCallback(boost::bind(&Sink::onClose, this));
+    ch_.setReadCallback(std::bind(&Sink::onRead, this, _1));
+    ch_.setCloseCallback(std::bind(&Sink::onClose, this));
     ch_.doNotLogHup();
   }
 
@@ -72,7 +73,7 @@ class Sink : public boost::enable_shared_from_this<Sink>,
     {
       ch_.disableAll();
       // ::kill(pid_, SIGPIPE); doesn't work
-      loop_->queueInLoop(boost::bind(&Sink::delayedClose, shared_from_this()));
+      loop_->queueInLoop(std::bind(&Sink::delayedClose, shared_from_this()));
     }
   }
 

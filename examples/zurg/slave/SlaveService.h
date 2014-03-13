@@ -3,7 +3,6 @@
 
 #include <examples/zurg/proto/slave.pb.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace muduo

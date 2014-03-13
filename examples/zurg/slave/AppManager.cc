@@ -21,6 +21,8 @@ struct Application
 }
 
 using namespace zurg;
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 AppManager::AppManager(muduo::net::EventLoop* loop, ChildManager* children)
   : loop_(loop),
@@ -109,7 +111,7 @@ void AppManager::startApp(Application* app, ApplicationStatus* out)
       status->set_pid(process->pid());
       // FIXME
       children_->runAtExit(process->pid(),  // bind strong ptr
-          boost::bind(&AppManager::onProcessExit, this, process, _1, _2));
+          std::bind(&AppManager::onProcessExit, this, process, _1, _2));
     }
     out->CopyFrom(*status);
   }

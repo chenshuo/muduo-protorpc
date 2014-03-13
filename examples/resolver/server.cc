@@ -5,8 +5,6 @@
 #include <muduo/cdns/Resolver.h>
 #include <muduo/protorpc2/RpcServer.h>
 
-#include <boost/bind.hpp>
-
 using namespace muduo;
 using namespace muduo::net;
 
@@ -28,7 +26,7 @@ class ResolverServiceImpl : public ResolverService
     LOG_INFO << "ResolverServiceImpl::Resolve " << request->address();
 
     bool succeed = resolver_.resolve(request->address().c_str(),
-                                     boost::bind(&ResolverServiceImpl::doneCallback,
+                                     std::bind(&ResolverServiceImpl::doneCallback,
                                                  this,
                                                  request->address(),
                                                  _1,
@@ -72,7 +70,7 @@ int main()
 {
   LOG_INFO << "pid = " << getpid();
   EventLoop loop;
-  // loop.runAfter(30, boost::bind(&EventLoop::quit, &loop));
+  // loop.runAfter(30, std::bind(&EventLoop::quit, &loop));
   InetAddress listenAddr(2053);
   resolver::ResolverServiceImpl impl(&loop);
   RpcServer server(&loop, listenAddr);

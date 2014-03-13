@@ -12,7 +12,7 @@ class GetHardwareTask;
 typedef boost::shared_ptr<GetHardwareTask> GetHardwareTaskPtr;
 
 class GetHardwareTask : public boost::enable_shared_from_this<GetHardwareTask>,
-                        boost::noncopyable
+                        muduo::noncopyable
 {
  public:
   GetHardwareTask(const GetHardwareRequestPtr& request, const muduo::net::RpcDoneCallback& done)
@@ -33,26 +33,27 @@ class GetHardwareTask : public boost::enable_shared_from_this<GetHardwareTask>,
 
   void start(SlaveServiceImpl* slave)
   {
+    using std::placeholders::_1;
     GetHardwareTaskPtr thisPtr(shared_from_this());
 
     if (lshw_)
     {
       RunCommandRequestPtr lshw(new RunCommandRequest);
       lshw->set_command("lshw");
-      slave->runCommand(lshw, NULL,  boost::bind(&GetHardwareTask::lshwDone, thisPtr, _1));
+      slave->runCommand(lshw, NULL,  std::bind(&GetHardwareTask::lshwDone, thisPtr, _1));
     }
 
     RunCommandRequestPtr lspci(new RunCommandRequest);
     lspci->set_command("lspci");
-    slave->runCommand(lspci, NULL,  boost::bind(&GetHardwareTask::lspciDone, thisPtr, _1));
+    slave->runCommand(lspci, NULL,  std::bind(&GetHardwareTask::lspciDone, thisPtr, _1));
 
     RunCommandRequestPtr lscpu(new RunCommandRequest);
     lscpu->set_command("lscpu");
-    slave->runCommand(lscpu, NULL,  boost::bind(&GetHardwareTask::lscpuDone, thisPtr, _1));
+    slave->runCommand(lscpu, NULL,  std::bind(&GetHardwareTask::lscpuDone, thisPtr, _1));
 
     RunCommandRequestPtr ifconfig(new RunCommandRequest);
     ifconfig->set_command("/sbin/ifconfig");
-    slave->runCommand(ifconfig, NULL,  boost::bind(&GetHardwareTask::ifconfigDone, thisPtr, _1));
+    slave->runCommand(ifconfig, NULL,  std::bind(&GetHardwareTask::ifconfigDone, thisPtr, _1));
   }
 
  private:

@@ -5,12 +5,12 @@
 #include <boost/test/unit_test.hpp>
 
 #include <boost/assign/std/vector.hpp>
-#include <boost/bind.hpp>
 
 #include <math.h>
 #include <stdio.h>
 
 using namespace boost::assign;
+using std::placeholders::_1;
 
 /*
 struct KeyCount
@@ -95,14 +95,14 @@ BOOST_AUTO_TEST_CASE(test1)
 
   std::vector<int64_t> pivots = wordfreq::partition(
       keys.back(), keys.size(), 1,
-      boost::bind(getHistogramFromKey, boost::ref(keys), _1));
+      std::bind(getHistogramFromKey, std::ref(keys), _1));
 
   BOOST_CHECK_EQUAL(pivots.size(), 1);
   BOOST_CHECK_EQUAL(pivots[0], 5);
 
   pivots = wordfreq::partition(
       keys.back(), keys.size(), 2,
-      boost::bind(getHistogramFromKey, boost::ref(keys), _1));
+      std::bind(getHistogramFromKey, std::ref(keys), _1));
 
   BOOST_CHECK_EQUAL(pivots.size(), 2);
   BOOST_CHECK_EQUAL(pivots[0], 2);
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(test1)
   keys += 6;
   pivots = wordfreq::partition(
       keys.back(), keys.size(), 2,
-      boost::bind(getHistogramFromKey, boost::ref(keys), _1));
+      std::bind(getHistogramFromKey, std::ref(keys), _1));
 
   BOOST_CHECK_EQUAL(pivots.size(), 2);
   BOOST_CHECK_EQUAL(pivots[0], 3);
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(testUniform)
 
   std::vector<int64_t> pivots = wordfreq::partition(
       keys.back(), keys.size(), 1,
-      boost::bind(getHistogramFromKey, boost::ref(keys), _1));
+      std::bind(getHistogramFromKey, std::ref(keys), _1));
 
   BOOST_CHECK_EQUAL(pivots.size(), 1);
   BOOST_CHECK_EQUAL(pivots[0], keys.back());
@@ -140,11 +140,11 @@ BOOST_AUTO_TEST_CASE(testUniform)
   {
   pivots = wordfreq::partition(
       keys.back(), keys.size(), 2,
-      boost::bind(getHistogramFromKey, boost::ref(keys), _1));
+      std::bind(getHistogramFromKey, std::ref(keys), _1));
 
   BOOST_CHECK_EQUAL(pivots.size(), 2);
   size_t p0 = std::count_if(keys.begin(), keys.end(),
-                            boost::bind(std::less_equal<int64_t>(), _1, pivots[0]));
+                            std::bind(std::less_equal<int64_t>(), _1, pivots[0]));
   double perWorker = static_cast<double>((keys.size() / pivots.size()));
   double skew = fabs(static_cast<double>(p0) / perWorker - 1.0);
   BOOST_CHECK(skew < 0.05);
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(testUniform)
   {
     pivots = wordfreq::partition(
         keys.back(), keys.size(), nWorkers,
-        boost::bind(getHistogramFromKey, boost::ref(keys), _1));
+        std::bind(getHistogramFromKey, std::ref(keys), _1));
     BOOST_CHECK_EQUAL(pivots.size(), nWorkers);
 
     double perWorker = static_cast<double>((keys.size() / pivots.size()));

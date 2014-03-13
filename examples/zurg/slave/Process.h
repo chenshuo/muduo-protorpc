@@ -6,7 +6,6 @@
 #include <muduo/net/Buffer.h>
 #include <muduo/net/TimerId.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -27,7 +26,7 @@ class Pipe;
 class Sink;
 
 class Process : public boost::enable_shared_from_this<Process>,
-                boost::noncopyable
+                muduo::noncopyable
 {
  public:
   Process(muduo::net::EventLoop* loop,

@@ -8,7 +8,6 @@
 #include <muduo/net/TcpClient.h>
 #include <muduo/net/TcpConnection.h>
 
-#include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <stdio.h>
@@ -17,8 +16,9 @@ using namespace muduo;
 using namespace muduo::net;
 
 static const int kRequests = 50000;
+std::string g_payload = "0123456789ABCDEF";
 
-class RpcClient : boost::noncopyable
+class RpcClient : noncopyable
 {
  public:
 
@@ -36,9 +36,9 @@ class RpcClient : boost::noncopyable
       finished_(false)
   {
     client_.setConnectionCallback(
-        boost::bind(&RpcClient::onConnection, this, _1));
+        std::bind(&RpcClient::onConnection, this, _1));
     client_.setMessageCallback(
-        boost::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+        std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
     // client_.enableRetry();
   }
 
@@ -50,8 +50,8 @@ class RpcClient : boost::noncopyable
   void sendRequest()
   {
     echo::EchoRequest request;
-    request.set_payload("0123456789ABCDEF");
-    stub_.Echo(request, boost::bind(&RpcClient::replied, this, _1));
+    request.set_payload(g_payload);
+    stub_.Echo(request, std::bind(&RpcClient::replied, this, _1));
   }
 
  private:
@@ -69,6 +69,7 @@ class RpcClient : boost::noncopyable
   {
     //LOG_INFO << "replied:\n" << resp->DebugString();
     //loop_->quit();
+    assert(resp->payload() == g_payload);
     ++count_;
     if (count_ < kRequests)
     {

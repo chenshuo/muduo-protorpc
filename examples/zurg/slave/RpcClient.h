@@ -5,6 +5,8 @@
 
 #include <examples/zurg/proto/master.pb.h>
 
+#include <boost/scoped_ptr.hpp>
+
 namespace muduo
 {
 namespace net
@@ -20,7 +22,7 @@ muduo::net::InetAddress syncResolve(const muduo::string& hostport);
 class Heartbeat;
 class SlaveConfig;
 
-class RpcClient : boost::noncopyable
+class RpcClient : muduo::noncopyable
 {
  public:
   RpcClient(muduo::net::EventLoop* loop,

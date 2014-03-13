@@ -24,10 +24,10 @@ using namespace muduo::net;
 namespace wordfreq
 {
 
-typedef boost::function<void()> Callback;
+typedef std::function<void()> Callback;
 class Impl;
 
-class RpcClient : boost::noncopyable
+class RpcClient : noncopyable
 {
  public:
   RpcClient(EventLoop* loop, const InetAddress& serverAddr, Impl* owner)
@@ -40,9 +40,9 @@ class RpcClient : boost::noncopyable
       stub_(get_pointer(channel_))
   {
     client_.setConnectionCallback(
-        boost::bind(&RpcClient::onConnection, this, _1));
+        std::bind(&RpcClient::onConnection, this, _1));
     client_.setMessageCallback(
-        boost::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+        std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
     // client_.enableRetry();
   }
 
@@ -61,7 +61,7 @@ class RpcClient : boost::noncopyable
     LOG_DEBUG << "[" << name_ << "] " << request
               << " part " << request->partition()
               << " size " << request->keys_size();
-    stub_.ShardKey(*request, boost::bind(&RpcClient::shardKeyCb, this, cb));
+    stub_.ShardKey(*request, std::bind(&RpcClient::shardKeyCb, this, cb));
   }
 
  private:
@@ -172,7 +172,7 @@ class Impl : public WordFrequencyService
         && !shuffling_)
     {
       shuffling_ = true;
-      Thread thr(boost::bind(&Impl::shuffle, this, request, done, start));
+      Thread thr(std::bind(&Impl::shuffle, this, request, done, start));
       thr.start();
     }
     else
@@ -322,7 +322,7 @@ class Impl : public WordFrequencyService
       if (shardReq->keys_size() >= kBatch)
       {
         shardReq->set_partition(part);
-        peers_[part].shardKey(shardReq, boost::bind(&Impl::doneShardKey, this, shardReq));
+        peers_[part].shardKey(shardReq, std::bind(&Impl::doneShardKey, this, shardReq));
         LOG_DEBUG << "taking";
         shardReq = freeShards_.take();
         LOG_DEBUG << "taken " << shardReq;;
@@ -337,7 +337,7 @@ class Impl : public WordFrequencyService
       if (shardReq->keys_size() > 0)
       {
         shardReq->set_partition(static_cast<int>(part));
-        peers_[part].shardKey(shardReq, boost::bind(&Impl::doneShardKey, this, shardReq));
+        peers_[part].shardKey(shardReq, std::bind(&Impl::doneShardKey, this, shardReq));
       }
     }
 

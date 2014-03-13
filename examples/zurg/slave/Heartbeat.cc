@@ -23,7 +23,7 @@ void ignoreCallback(const ::rpc2::EmptyPtr&)
 // unique_ptr is better
 typedef boost::shared_ptr<muduo::FileUtil::ReadSmallFile> SmallFilePtr;
 
-class ProcFs : boost::noncopyable
+class ProcFs : muduo::noncopyable
 {
  public:
   typedef std::map<muduo::StringPiece, SmallFilePtr> FileMap;
@@ -156,7 +156,7 @@ Heartbeat::Heartbeat(muduo::net::EventLoop* loop,
     procFs_(new ProcFs),
     beating_(false)
 {
-  loop_->runEvery(config.heartbeatInterval_, boost::bind(&Heartbeat::onTimer, this));
+  loop_->runEvery(config.heartbeatInterval_, std::bind(&Heartbeat::onTimer, this));
 }
 
 Heartbeat::~Heartbeat()

@@ -1,5 +1,6 @@
 add_executable(protoc-gen-rpc gen.cc)
 target_link_libraries(protoc-gen-rpc protoc protobuf pthread)
+set_source_files_properties(gen.cc PROPERTIES COMPILE_FLAGS "-std=c++98")
 
 set(PROTO_SRC ${Muduo_INCLUDE_DIR}/muduo/net/protorpc/rpcservice.proto ${CMAKE_CURRENT_SOURCE_DIR}/rpc2.proto)
 add_custom_command(OUTPUT rpcservice.pb.cc rpcservice.pb.h rpc2.pb.h rpc2.pb.cc

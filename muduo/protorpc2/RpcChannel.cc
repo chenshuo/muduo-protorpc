@@ -16,8 +16,6 @@
 
 #include <google/protobuf/descriptor.h>
 
-#include <boost/bind.hpp>
-
 using namespace muduo;
 using namespace muduo::net;
 
@@ -36,14 +34,14 @@ static int test_down_pointer_cast()
 static int dummy = test_down_pointer_cast();
 
 RpcChannel::RpcChannel()
-  : codec_(boost::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
+  : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     services_(NULL)
 {
   LOG_INFO << "RpcChannel::ctor - " << this;
 }
 
 RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
-  : codec_(boost::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
+  : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     conn_(conn),
     services_(NULL)
 {
@@ -182,7 +180,7 @@ void RpcChannel::callServiceMethod(const RpcMessage& message)
         int64_t id = message.id();
         const ::google::protobuf::Message* responsePrototype = &service->GetResponsePrototype(method);
         service->CallMethod(method, request, responsePrototype,
-            boost::bind(&RpcChannel::doneCallback, this, responsePrototype,  _1, id));
+            std::bind(&RpcChannel::doneCallback, this, responsePrototype, _1, id));
       }
       else
       {

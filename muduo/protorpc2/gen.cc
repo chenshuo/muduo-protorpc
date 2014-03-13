@@ -44,6 +44,10 @@
 
 #include <stdio.h>
 
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
+static_assert(false, "Compile with C++98/03 only.")
+#endif
+
 const bool kTrace = false;
 
 namespace google {
@@ -174,7 +178,7 @@ void ServiceGenerator::GenerateMethodSignatures(
       printer->Print(sub_vars,
         "using $classname$::$name$;\n"
         "$virtual$void $name$(const $input_type$& request,\n"
-        "                     const ::boost::function1<void, const $output_typedef$Ptr&>& done);\n");
+        "                     const ::std::function<void(const $output_typedef$Ptr&)>& done);\n");
     }
   }
 }
@@ -345,7 +349,7 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
 
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
-      "                              const ::boost::function1<void, const $output_typedef$Ptr&>& done) {\n"
+      "                              const ::std::function<void(const $output_typedef$Ptr&)>& done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       request, &$output_type$::default_instance(), done);\n"
       "}\n");

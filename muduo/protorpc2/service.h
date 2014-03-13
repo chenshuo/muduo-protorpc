@@ -11,8 +11,6 @@
 #ifndef MUDUO_NET_PROTORPC_SERVICE_H
 #define MUDUO_NET_PROTORPC_SERVICE_H
 
-#include <boost/noncopyable.hpp>
-#include <boost/function.hpp>
 #include <muduo/protorpc2/RpcChannel.h>
 
 // Service and RpcChannel classes are incorporated from
@@ -76,7 +74,7 @@ class RpcChannel;
 // Defined in this file.
 class Service;
 class RpcController;
-typedef ::boost::function1<void, const ::google::protobuf::Message*> RpcDoneCallback;
+typedef ::std::function<void(const ::google::protobuf::Message*)> RpcDoneCallback;
 typedef ::std::map<std::string, Service*> ServiceMap;
 
 // Abstract base interface for protocol-buffer-based RPC services.  Services
@@ -84,7 +82,7 @@ typedef ::std::map<std::string, Service*> ServiceMap;
 // stubs), but they subclass this base interface.  The methods of this
 // interface can be used to call the methods of the Service without knowing
 // its exact type at compile time (analogous to Reflection).
-class Service : boost::noncopyable
+class Service : noncopyable
 {
  public:
   Service() {}

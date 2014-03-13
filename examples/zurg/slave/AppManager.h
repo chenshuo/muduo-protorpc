@@ -3,7 +3,6 @@
 
 #include <examples/zurg/proto/slave.pb.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <map>
@@ -28,7 +27,7 @@ class ChildManager;
 class Process;
 typedef boost::shared_ptr<Process> ProcessPtr;
 
-class AppManager : boost::noncopyable
+class AppManager : muduo::noncopyable
 {
  public:
   AppManager(muduo::net::EventLoop*, ChildManager*);

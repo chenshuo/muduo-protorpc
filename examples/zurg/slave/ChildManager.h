@@ -3,9 +3,6 @@
 
 #include <muduo/net/Channel.h>
 
-#include <boost/noncopyable.hpp>
-#include <boost/function.hpp>
-
 #include <map>
 
 namespace muduo
@@ -21,10 +18,10 @@ struct rusage;
 namespace zurg
 {
 
-class ChildManager : boost::noncopyable
+class ChildManager : muduo::noncopyable
 {
  public:
-  typedef boost::function<void(int status, const struct rusage&)> Callback;
+  typedef std::function<void(int status, const struct rusage&)> Callback;
 
   ChildManager(muduo::net::EventLoop* loop, int zombieInterval);
   ~ChildManager();

@@ -16,8 +16,6 @@
 #include <muduo/net/protorpc/RpcCodec.h>
 
 #include <google/protobuf/stubs/common.h> // implicit_cast, down_cast
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <map>
@@ -125,7 +123,7 @@ class Service;
 //   RpcChannel* channel = new MyRpcChannel("remotehost.example.com:1234");
 //   MyService* service = new MyService::Stub(channel);
 //   service->MyMethod(request, &response, callback);
-class RpcChannel : boost::noncopyable
+class RpcChannel : noncopyable
 {
  public:
   typedef std::map<std::string, Service*> ServiceMap;
@@ -151,7 +149,7 @@ class RpcChannel : boost::noncopyable
     services_ = services;
   }
 
-  typedef ::boost::function1<void, const ::google::protobuf::MessagePtr&> ClientDoneCallback;
+  typedef ::std::function<void(const ::google::protobuf::MessagePtr&)> ClientDoneCallback;
 
   // Call the given method of the remote service.  The signature of this
   // procedure looks the same as Service::CallMethod(), but the requirements
@@ -164,7 +162,7 @@ class RpcChannel : boost::noncopyable
                   const ClientDoneCallback& done);
 
   template<typename Output>
-  static void downcastcall(const ::boost::function1<void, const boost::shared_ptr<Output>&>& done,
+  static void downcastcall(const ::std::function<void(const boost::shared_ptr<Output>&)>& done,
                            const ::google::protobuf::MessagePtr& output)
   {
     done(::google::protobuf::down_pointer_cast<Output>(output));
@@ -174,9 +172,9 @@ class RpcChannel : boost::noncopyable
   void CallMethod(const ::google::protobuf::MethodDescriptor* method,
                   const ::google::protobuf::Message& request,
                   const Output* response,
-                  const ::boost::function1<void, const boost::shared_ptr<Output>&>& done)
+                  const ::std::function<void(const boost::shared_ptr<Output>&)>& done)
   {
-    CallMethod(method, request, response, boost::bind(&downcastcall<Output>, done, _1));
+    CallMethod(method, request, response, std::bind(&downcastcall<Output>, done, _1));
   }
 
   void onDisconnect();

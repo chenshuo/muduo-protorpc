@@ -23,7 +23,7 @@ namespace wordfreq
 
 class Controller;
 
-class RpcClient : boost::noncopyable
+class RpcClient : noncopyable
 {
  public:
   RpcClient(EventLoop* loop, const InetAddress& serverAddr, Controller* owner)
@@ -36,9 +36,9 @@ class RpcClient : boost::noncopyable
       stub_(get_pointer(channel_))
   {
     client_.setConnectionCallback(
-        boost::bind(&RpcClient::onConnection, this, _1));
+        std::bind(&RpcClient::onConnection, this, _1));
     client_.setMessageCallback(
-        boost::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+        std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
     // client_.enableRetry();
   }
 
@@ -48,7 +48,7 @@ class RpcClient : boost::noncopyable
     client_.connect();
   }
 
-  void getInfo(const boost::function1<void, const GetInfoResponsePtr&>& cb)
+  void getInfo(const std::function<void(const GetInfoResponsePtr&)>& cb)
   {
     stub_.GetInfo(rpc2::Empty::default_instance(), cb);
   }
@@ -98,7 +98,7 @@ struct Worker
   }
 };
 
-class Controller : boost::noncopyable
+class Controller : noncopyable
 {
  public:
   Controller(EventLoop* loop, const InetAddress& headWorker)
@@ -170,7 +170,7 @@ class Controller : boost::noncopyable
     LOG_INFO << "getInfo of head";
     {
       CountDownLatch latch(1);
-      head.getInfo(boost::bind(&Controller::getHeadInfoCb, this, _1, &latch, &peers));
+      head.getInfo(std::bind(&Controller::getHeadInfoCb, this, _1, &latch, &peers));
       latch.wait();
     }
 
@@ -221,7 +221,7 @@ class Controller : boost::noncopyable
       CountDownLatch latch(static_cast<int>(clients_.size()));
       for (size_t i = 0; i < clients_.size(); ++i)
       {
-        clients_[i].getInfo(boost::bind(&Controller::getInfoCb, this, _1, &latch, i));
+        clients_[i].getInfo(std::bind(&Controller::getInfoCb, this, _1, &latch, i));
       }
       latch.wait();
     }

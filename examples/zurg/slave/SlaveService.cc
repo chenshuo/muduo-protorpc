@@ -16,6 +16,8 @@
 
 using namespace muduo::net;
 using namespace zurg;
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 SlaveServiceImpl::SlaveServiceImpl(EventLoop* loop, int zombieInterval)
   : loop_(loop),
@@ -83,7 +85,7 @@ void SlaveServiceImpl::getFileChecksum(const GetFileChecksumRequestPtr& request,
       runCommandReq->add_args(request->files(i));
     }
     runCommand(runCommandReq, NULL,
-        boost::bind(&SlaveServiceImpl::getFileChecksumDone, this, request, _1, done));
+        std::bind(&SlaveServiceImpl::getFileChecksumDone, this, request, _1, done));
   }
   else
   {
@@ -145,10 +147,10 @@ void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
   else
   {
     children_->runAtExit(process->pid(),  // bind strong ptr
-                         boost::bind(&Process::onCommandExit, process, _1, _2));
+                         std::bind(&Process::onCommandExit, process, _1, _2));
     boost::weak_ptr<Process> weakProcessPtr(process);
     TimerId timerId = loop_->runAfter(request->timeout(),
-                                      boost::bind(&Process::onTimeoutWeak, weakProcessPtr));
+                                      std::bind(&Process::onTimeoutWeak, weakProcessPtr));
     process->setTimerId(timerId);
   }
 }

@@ -16,11 +16,11 @@
 using namespace muduo;
 using namespace muduo::net;
 
-class RpcClient : boost::noncopyable
+class RpcClient : noncopyable
 {
  public:
-  typedef boost::function<void(int64_t, int64_t, int64_t)> QueryCallback;
-  typedef boost::function<void(int64_t, int64_t)> SearchCallback;
+  typedef std::function<void(int64_t, int64_t, int64_t)> QueryCallback;
+  typedef std::function<void(int64_t, int64_t)> SearchCallback;
 
   RpcClient(EventLoop* loop, const InetAddress& serverAddr)
     : loop_(loop),
@@ -30,9 +30,9 @@ class RpcClient : boost::noncopyable
       stub_(get_pointer(channel_))
   {
     client_.setConnectionCallback(
-        boost::bind(&RpcClient::onConnection, this, _1));
+        std::bind(&RpcClient::onConnection, this, _1));
     client_.setMessageCallback(
-        boost::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+        std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
     // client_.enableRetry();
   }
 
@@ -45,14 +45,14 @@ class RpcClient : boost::noncopyable
   void query(const QueryCallback& cb)
   {
     ::rpc2::Empty req;
-    stub_.Query(req, boost::bind(&RpcClient::queryCb, this, _1, cb)); // need C++11 lambda
+    stub_.Query(req, std::bind(&RpcClient::queryCb, this, _1, cb)); // need C++11 lambda
   }
 
   void search(int64_t guess, const SearchCallback& cb)
   {
     median::SearchRequest req;
     req.set_guess(guess);
-    stub_.Search(req, boost::bind(&RpcClient::searchCb, this, _1, cb)); // need C++11 lambda
+    stub_.Search(req, std::bind(&RpcClient::searchCb, this, _1, cb)); // need C++11 lambda
   }
 
  private:
@@ -89,7 +89,7 @@ class RpcClient : boost::noncopyable
   median::Sorter::Stub stub_;
 };
 
-class Merger : boost::noncopyable
+class Merger : noncopyable
 {
  public:
   Merger(EventLoop* loop, const std::vector<InetAddress>& addresses)
@@ -118,7 +118,7 @@ class Merger : boost::noncopyable
     CountDownLatch latch(static_cast<int>(sorters_.size()));
     BOOST_FOREACH(RpcClient& sorter, sorters_)
     {
-      sorter.query(boost::bind(&Merger::queryCb, this, &latch, count, min, max, _1, _2, _3)); // need C++11 lambda
+      sorter.query(std::bind(&Merger::queryCb, this, &latch, count, min, max, _1, _2, _3)); // need C++11 lambda
     }
     latch.wait();
   }
@@ -131,7 +131,7 @@ class Merger : boost::noncopyable
     CountDownLatch latch(static_cast<int>(sorters_.size()));
     BOOST_FOREACH(RpcClient& sorter, sorters_)
     {
-      sorter.search(guess, boost::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2)); // need C++11 lambda
+      sorter.search(guess, std::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2)); // need C++11 lambda
     }
     latch.wait();
   }
@@ -207,7 +207,7 @@ void run(Merger* merger)
   else
   {
     std::pair<int64_t, bool> median = getKth(
-        boost::bind(&Merger::search, merger, _1, _2, _3),
+        std::bind(&Merger::search, merger, _1, _2, _3),
         (count+1)/2, count, min, max);
     if (median.second)
     {

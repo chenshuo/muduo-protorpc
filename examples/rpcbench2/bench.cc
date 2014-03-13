@@ -9,7 +9,6 @@
 #include <muduo/net/TcpClient.h>
 #include <muduo/net/TcpConnection.h>
 
-#include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <stdio.h>
@@ -19,7 +18,7 @@ using namespace muduo::net;
 
 std::string g_payload = "0123456789ABCDEF";
 
-class PerThreadMeter : boost::noncopyable
+class PerThreadMeter : noncopyable
 {
  public:
   PerThreadMeter()
@@ -82,7 +81,7 @@ class PerThreadMeter : boost::noncopyable
   int64_t padding_[3];  // make this object large enough to prevent false sharing
 };
 
-class RpcClient : boost::noncopyable
+class RpcClient : noncopyable
 {
  public:
   RpcClient(EventLoop* loop,
@@ -95,12 +94,12 @@ class RpcClient : boost::noncopyable
       connected_(connected),
       count_(0),
       stop_(false),
-      done_(boost::bind(&RpcClient::replied, this, _1))
+      done_(std::bind(&RpcClient::replied, this, _1))
   {
     client_.setConnectionCallback(
-        boost::bind(&RpcClient::onConnection, this, _1));
+        std::bind(&RpcClient::onConnection, this, _1));
     client_.setMessageCallback(
-        boost::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+        std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
     // client_.enableRetry();
   }
 
@@ -118,7 +117,7 @@ class RpcClient : boost::noncopyable
 
   void stop()
   {
-    loop_->runInLoop(boost::bind(&RpcClient::stopInLoop, this));
+    loop_->runInLoop(std::bind(&RpcClient::stopInLoop, this));
   }
 
  private:
@@ -139,6 +138,7 @@ class RpcClient : boost::noncopyable
 
   void replied(const echo::EchoResponsePtr& resp)
   {
+    assert(resp->payload() == g_payload);
     ++count_;
     if (!stop_)
     {
@@ -159,7 +159,7 @@ class RpcClient : boost::noncopyable
   CountDownLatch* connected_;
   int64_t count_;
   bool stop_;
-  boost::function<void (const echo::EchoResponsePtr&)> done_;
+  std::function<void (const echo::EchoResponsePtr&)> done_;
 };
 
 void printPerThread()

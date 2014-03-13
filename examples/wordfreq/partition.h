@@ -6,7 +6,6 @@
 #include <vector>
 #include <muduo/base/Types.h>
 #include <muduo/base/Logging.h>
-#include <boost/function.hpp>
 #include <boost/foreach.hpp>
 
 namespace wordfreq
@@ -19,7 +18,7 @@ typedef std::vector<int64_t> GetHistogram(const std::vector<int64_t>& pivots);
 inline std::vector<int64_t> partition(int64_t maxKey,
                                       int64_t keyCount,
                                       int nWorkers,
-                                      const boost::function<GetHistogram>& getHist)
+                                      const std::function<GetHistogram>& getHist)
 {
   assert(maxKey > 0);
   assert(keyCount > 0);

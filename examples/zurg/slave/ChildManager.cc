@@ -3,8 +3,6 @@
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>
 
-#include <boost/bind.hpp>
-
 #include <assert.h>
 #include <signal.h>
 #include <sys/resource.h>
@@ -13,6 +11,7 @@
 
 using namespace muduo::net;
 using namespace zurg;
+using std::placeholders::_1;
 
 namespace zurg
 {
@@ -50,8 +49,8 @@ ChildManager::~ChildManager()
 
 void ChildManager::start()
 {
-  loop_->runEvery(zombieInterval_, boost::bind(&ChildManager::onTimer, this));
-  channel_.setReadCallback(boost::bind(&ChildManager::onRead, this, _1));
+  loop_->runEvery(zombieInterval_, std::bind(&ChildManager::onTimer, this));
+  channel_.setReadCallback(std::bind(&ChildManager::onRead, this, _1));
   channel_.enableReading();
 }
 
@@ -122,7 +121,7 @@ void ChildManager::onExit(pid_t pid, int status, const struct rusage& resourceUs
   if (it != callbacks_.end())
   {
     // defer
-    loop_->queueInLoop(boost::bind(it->second, status, resourceUsage));
+    loop_->queueInLoop(std::bind(it->second, status, resourceUsage));
     // it->second(status, resourceUsage);
     callbacks_.erase(it);
   }
