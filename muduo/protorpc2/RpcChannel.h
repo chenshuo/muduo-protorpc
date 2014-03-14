@@ -96,7 +96,7 @@ inline ::std::shared_ptr<To> down_pointer_cast(const ::std::shared_ptr<From>& f)
   }
 
 #if !defined(NDEBUG) && !defined(GOOGLE_PROTOBUF_NO_RTTI)
-  assert(f == NULL || dynamic_cast<To*>(get_pointer(f)) != NULL);  // RTTI: debug mode only!
+  assert(f == NULL || dynamic_cast<To*>(muduo::get_pointer(f)) != NULL);  // RTTI: debug mode only!
 #endif
   return ::std::static_pointer_cast<To>(f);
 }
