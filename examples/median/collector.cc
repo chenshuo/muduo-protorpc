@@ -8,7 +8,6 @@
 #include <muduo/net/TcpClient.h>
 #include <muduo/net/TcpConnection.h>
 
-#include <boost/foreach.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <stdio.h>
@@ -105,7 +104,7 @@ class Merger : noncopyable
   {
     assert(!loop_->isInLoopThread());
     CountDownLatch latch(static_cast<int>(sorters_.size()));
-    BOOST_FOREACH(RpcClient& sorter, sorters_)
+    for (RpcClient& sorter : sorters_)
     {
       sorter.connect(&latch);
     }
@@ -116,7 +115,7 @@ class Merger : noncopyable
   {
     assert(!loop_->isInLoopThread());
     CountDownLatch latch(static_cast<int>(sorters_.size()));
-    BOOST_FOREACH(RpcClient& sorter, sorters_)
+    for (RpcClient& sorter : sorters_)
     {
       sorter.query(std::bind(&Merger::queryCb, this, &latch, count, min, max, _1, _2, _3)); // need C++11 lambda
     }
@@ -129,7 +128,7 @@ class Merger : noncopyable
     *smaller = 0;
     *same = 0;
     CountDownLatch latch(static_cast<int>(sorters_.size()));
-    BOOST_FOREACH(RpcClient& sorter, sorters_)
+    for (RpcClient& sorter : sorters_)
     {
       sorter.search(guess, std::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2)); // need C++11 lambda
     }

@@ -6,7 +6,6 @@
 #include <vector>
 #include <muduo/base/Types.h>
 #include <muduo/base/Logging.h>
-#include <boost/foreach.hpp>
 
 namespace wordfreq
 {
@@ -50,7 +49,7 @@ inline std::vector<int64_t> partition(int64_t maxKey,
     histogram = getHist(pivots);
 
     bool retry = false;
-    BOOST_FOREACH(int64_t count, histogram)
+    for (int64_t count : histogram)
     {
       if (count > 2 * keyCount / nPivots)
       {

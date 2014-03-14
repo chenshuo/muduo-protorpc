@@ -10,7 +10,6 @@
 #include <muduo/net/TcpClient.h>
 #include <muduo/net/TcpConnection.h>
 
-#include <boost/foreach.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <stdio.h>
@@ -139,7 +138,7 @@ class Controller : noncopyable
     connectAll();
 
     LOG_INFO << "got info of all";
-    BOOST_FOREACH(Worker& worker, workers_)
+    for (Worker& worker : workers_)
     {
       keyCount_ += worker.shardKeyCount;
       if (worker.shardMaxKey > maxKey_)
@@ -208,7 +207,7 @@ class Controller : noncopyable
   {
     {
       CountDownLatch latch(static_cast<int>(clients_.size()));
-      BOOST_FOREACH(RpcClient& client, clients_)
+      for (RpcClient& client : clients_)
       {
         client.connect(&latch);
       }
