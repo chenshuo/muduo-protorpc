@@ -11,6 +11,8 @@
 #include <muduo/base/Timestamp.h>
 #include <muduo/net/EventLoop.h>
 
+#include <algorithm>
+
 #include <sys/utsname.h>
 
 namespace zurg
@@ -21,7 +23,7 @@ void ignoreCallback(const ::rpc2::EmptyPtr&)
 }
 
 // unique_ptr is better
-typedef boost::shared_ptr<muduo::FileUtil::ReadSmallFile> SmallFilePtr;
+typedef std::shared_ptr<muduo::FileUtil::ReadSmallFile> SmallFilePtr;
 
 class ProcFs : muduo::noncopyable
 {

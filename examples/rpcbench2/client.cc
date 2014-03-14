@@ -65,7 +65,7 @@ class RpcClient : noncopyable
     }
   }
 
-  void replied(const boost::shared_ptr<echo::EchoResponse>& resp)
+  void replied(const echo::EchoResponsePtr& resp)
   {
     //LOG_INFO << "replied:\n" << resp->DebugString();
     //loop_->quit();

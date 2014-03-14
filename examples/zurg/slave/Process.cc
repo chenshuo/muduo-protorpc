@@ -11,8 +11,6 @@
 #include <muduo/net/Channel.h>
 #include <muduo/net/EventLoop.h>
 
-#include <boost/weak_ptr.hpp>
-
 #include <stdexcept>
 
 #include <assert.h>
@@ -408,7 +406,7 @@ int Process::afterFork(Pipe& execError, Pipe& stdOutput, Pipe& stdError)
   }
 }
 
-void Process::onTimeoutWeak(const boost::weak_ptr<Process>& wkPtr)
+void Process::onTimeoutWeak(const std::weak_ptr<Process>& wkPtr)
 {
   ProcessPtr ptr(wkPtr.lock());
   if (ptr)

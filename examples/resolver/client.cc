@@ -59,7 +59,7 @@ class RpcClient : noncopyable
     stub_.Resolve(request, std::bind(&RpcClient::resolved, this, _1, host));
   }
 
-  void resolved(const boost::shared_ptr<resolver::ResolveResponse>& resp, std::string host)
+  void resolved(const resolver::ResolveResponsePtr& resp, std::string host)
   {
     if (resp->resolved())
     {

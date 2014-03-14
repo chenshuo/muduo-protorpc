@@ -6,9 +6,6 @@
 #include <muduo/net/Buffer.h>
 #include <muduo/net/TimerId.h>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-
 namespace muduo
 {
 namespace net
@@ -25,7 +22,7 @@ namespace zurg
 class Pipe;
 class Sink;
 
-class Process : public boost::enable_shared_from_this<Process>,
+class Process : public std::enable_shared_from_this<Process>,
                 muduo::noncopyable
 {
  public:
@@ -50,7 +47,7 @@ class Process : public boost::enable_shared_from_this<Process>,
   void onCommandExit(int status, const struct ::rusage&);
   void onTimeout();
 
-  static void onTimeoutWeak(const boost::weak_ptr<Process>& wkPtr);
+  static void onTimeoutWeak(const std::weak_ptr<Process>& wkPtr);
 
  private:
   void execChild(Pipe& execError, int stdOutput, int stdError)
@@ -66,13 +63,13 @@ class Process : public boost::enable_shared_from_this<Process>,
   muduo::Timestamp startTime_;
   int64_t startTimeInJiffies_;
   muduo::net::TimerId timerId_;
-  boost::shared_ptr<Sink> stdoutSink_;
-  boost::shared_ptr<Sink> stderrSink_;
+  std::shared_ptr<Sink> stdoutSink_;
+  std::shared_ptr<Sink> stderrSink_;
   bool redirectStdout_;
   bool redirectStderr_;
   bool runCommand_;
 };
-typedef boost::shared_ptr<Process> ProcessPtr;
+typedef std::shared_ptr<Process> ProcessPtr;
 
 }
 #endif  // MUDUO_PROTORPC_ZURG_PROCESS_H

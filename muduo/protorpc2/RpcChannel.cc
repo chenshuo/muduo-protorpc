@@ -21,8 +21,8 @@ using namespace muduo::net;
 
 static int test_down_pointer_cast()
 {
-  ::boost::shared_ptr< ::google::protobuf::Message> msg(new RpcMessage);
-  ::boost::shared_ptr<RpcMessage> rpc(::google::protobuf::down_pointer_cast<RpcMessage>(msg));
+  ::std::shared_ptr< ::google::protobuf::Message> msg(new RpcMessage);
+  ::std::shared_ptr<RpcMessage> rpc(::google::protobuf::down_pointer_cast<RpcMessage>(msg));
   assert(msg && rpc);
   if (!rpc)
   {

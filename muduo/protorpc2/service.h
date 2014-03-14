@@ -58,8 +58,8 @@ class Descriptor;            // descriptor.h
 class ServiceDescriptor;     // descriptor.h
 class MethodDescriptor;      // descriptor.h
 class Message;               // message.h
-typedef ::boost::shared_ptr<Message> MessagePtr;
-typedef ::boost::shared_ptr<const Message> ConstMessagePtr;
+typedef ::std::shared_ptr<Message> MessagePtr;
+typedef ::std::shared_ptr<const Message> ConstMessagePtr;
 
 }  // namespace protobuf
 }  // namespace google

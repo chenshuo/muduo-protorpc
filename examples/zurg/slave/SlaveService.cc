@@ -12,8 +12,6 @@
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>
 
-#include <boost/weak_ptr.hpp>
-
 using namespace muduo::net;
 using namespace zurg;
 using std::placeholders::_1;
@@ -148,7 +146,7 @@ void SlaveServiceImpl::runCommand(const RunCommandRequestPtr& request,
   {
     children_->runAtExit(process->pid(),  // bind strong ptr
                          std::bind(&Process::onCommandExit, process, _1, _2));
-    boost::weak_ptr<Process> weakProcessPtr(process);
+    std::weak_ptr<Process> weakProcessPtr(process);
     TimerId timerId = loop_->runAfter(request->timeout(),
                                       std::bind(&Process::onTimeoutWeak, weakProcessPtr));
     process->setTimerId(timerId);

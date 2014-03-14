@@ -3,15 +3,13 @@
 
 #include <muduo/base/Logging.h>
 
-#include <boost/enable_shared_from_this.hpp>
-
 namespace zurg
 {
 
 class GetHardwareTask;
-typedef boost::shared_ptr<GetHardwareTask> GetHardwareTaskPtr;
+typedef std::shared_ptr<GetHardwareTask> GetHardwareTaskPtr;
 
-class GetHardwareTask : public boost::enable_shared_from_this<GetHardwareTask>,
+class GetHardwareTask : public std::enable_shared_from_this<GetHardwareTask>,
                         muduo::noncopyable
 {
  public:

@@ -3,8 +3,6 @@
 
 #include <examples/zurg/proto/slave.pb.h>
 
-#include <boost/scoped_ptr.hpp>
-
 namespace muduo
 {
 namespace net
@@ -81,8 +79,8 @@ class SlaveServiceImpl : public SlaveService
                            const RpcDoneCallback& done);
 
   muduo::net::EventLoop* loop_;
-  boost::scoped_ptr<ChildManager> children_;
-  boost::scoped_ptr<AppManager> apps_;
+  std::unique_ptr<ChildManager> children_;
+  std::unique_ptr<AppManager> apps_;
 };
 
 }

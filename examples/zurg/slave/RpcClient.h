@@ -5,8 +5,6 @@
 
 #include <examples/zurg/proto/master.pb.h>
 
-#include <boost/scoped_ptr.hpp>
-
 namespace muduo
 {
 namespace net
@@ -38,10 +36,10 @@ class RpcClient : muduo::noncopyable
   void onConnection(const muduo::net::TcpConnectionPtr& conn);
 
   muduo::net::EventLoop* loop_;
-  boost::scoped_ptr<muduo::net::TcpClient> client_;
+  std::unique_ptr<muduo::net::TcpClient> client_;
   muduo::net::RpcChannelPtr channel_;
   MasterService::Stub stub_;
-  boost::scoped_ptr<Heartbeat> heartbeat_;
+  std::unique_ptr<Heartbeat> heartbeat_;
 };
 
 }

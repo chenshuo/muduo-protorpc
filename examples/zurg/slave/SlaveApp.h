@@ -3,8 +3,6 @@
 
 #include <muduo/net/EventLoop.h>
 
-#include <boost/scoped_ptr.hpp>
-
 namespace muduo
 {
 namespace net
@@ -35,11 +33,11 @@ class SlaveApp : muduo::noncopyable
  private:
   muduo::net::EventLoop loop_;
   const SlaveConfig& config_;
-  boost::scoped_ptr<RpcClient> rpcClient_;
-  boost::scoped_ptr<SlaveServiceImpl> service_;
+  std::unique_ptr<RpcClient> rpcClient_;
+  std::unique_ptr<SlaveServiceImpl> service_;
 
   // optional
-  boost::scoped_ptr<muduo::net::RpcServer> server_;
+  std::unique_ptr<muduo::net::RpcServer> server_;
 
   static SlaveApp* instance_;
 };

@@ -3,8 +3,6 @@
 
 #include <examples/zurg/proto/slave.pb.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include <map>
 #include <string>
 
@@ -23,9 +21,9 @@ namespace zurg
 
 struct Application;
 class ChildManager;
-//typedef boost::shared_ptr<Application> ApplicationPtr;
+//typedef std::shared_ptr<Application> ApplicationPtr;
 class Process;
-typedef boost::shared_ptr<Process> ProcessPtr;
+typedef std::shared_ptr<Process> ProcessPtr;
 
 class AppManager : muduo::noncopyable
 {

@@ -16,7 +16,6 @@
 #include <muduo/net/protorpc/RpcCodec.h>
 
 #include <google/protobuf/stubs/common.h> // implicit_cast, down_cast
-#include <boost/shared_ptr.hpp>
 
 #include <map>
 
@@ -65,7 +64,7 @@ class Descriptor;            // descriptor.h
 class ServiceDescriptor;     // descriptor.h
 class MethodDescriptor;      // descriptor.h
 class Message;               // message.h
-typedef ::boost::shared_ptr<Message> MessagePtr;
+typedef ::std::shared_ptr<Message> MessagePtr;
 
 // When you upcast (that is, cast a pointer from type Foo to type
 // SuperclassOfFoo), it's fine to use implicit_cast<>, since upcasts
@@ -86,7 +85,7 @@ typedef ::boost::shared_ptr<Message> MessagePtr;
 // You should design the code some other way not to need this.
 
 template<typename To, typename From>     // use like this: down_pointer_cast<T>(foo);
-inline ::boost::shared_ptr<To> down_pointer_cast(const ::boost::shared_ptr<From>& f) {
+inline ::std::shared_ptr<To> down_pointer_cast(const ::std::shared_ptr<From>& f) {
   // so we only accept smart pointers
   // Ensures that To is a sub-type of From *.  This test is here only
   // for compile-time type checking, and has no overhead in an
@@ -99,7 +98,7 @@ inline ::boost::shared_ptr<To> down_pointer_cast(const ::boost::shared_ptr<From>
 #if !defined(NDEBUG) && !defined(GOOGLE_PROTOBUF_NO_RTTI)
   assert(f == NULL || dynamic_cast<To*>(get_pointer(f)) != NULL);  // RTTI: debug mode only!
 #endif
-  return ::boost::static_pointer_cast<To>(f);
+  return ::std::static_pointer_cast<To>(f);
 }
 
 }  // namespace protobuf
@@ -162,7 +161,7 @@ class RpcChannel : noncopyable
                   const ClientDoneCallback& done);
 
   template<typename Output>
-  static void downcastcall(const ::std::function<void(const boost::shared_ptr<Output>&)>& done,
+  static void downcastcall(const ::std::function<void(const std::shared_ptr<Output>&)>& done,
                            const ::google::protobuf::MessagePtr& output)
   {
     done(::google::protobuf::down_pointer_cast<Output>(output));
@@ -172,7 +171,7 @@ class RpcChannel : noncopyable
   void CallMethod(const ::google::protobuf::MethodDescriptor* method,
                   const ::google::protobuf::Message& request,
                   const Output* response,
-                  const ::std::function<void(const boost::shared_ptr<Output>&)>& done)
+                  const ::std::function<void(const std::shared_ptr<Output>&)>& done)
   {
     CallMethod(method, request, response, std::bind(&downcastcall<Output>, done, _1));
   }
@@ -208,7 +207,7 @@ class RpcChannel : noncopyable
 
   const ServiceMap* services_;
 };
-typedef boost::shared_ptr<RpcChannel> RpcChannelPtr; // FIXME: unique_ptr
+typedef std::shared_ptr<RpcChannel> RpcChannelPtr; // FIXME: unique_ptr
 
 }
 }

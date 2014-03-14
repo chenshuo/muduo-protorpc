@@ -62,7 +62,7 @@ string ClassName(const Descriptor* descriptor, bool qualified);
 
 void MessageGenerator::GenerateForwardDeclaration(io::Printer* printer) {
   printer->Print("class $classname$;\n"
-                 "typedef ::boost::shared_ptr<$classname$> $classname$Ptr;\n",
+                 "typedef ::std::shared_ptr<$classname$> $classname$Ptr;\n",
                  "classname", classname_);
 
   for (int i = 0; i < descriptor_->nested_type_count(); i++) {

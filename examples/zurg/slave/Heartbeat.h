@@ -1,9 +1,8 @@
 #ifndef MUDUO_PROTORPC_ZURG_HEARTBEAT_H
 #define MUDUO_PROTORPC_ZURG_HEARTBEAT_H
 
-#include <boost/scoped_ptr.hpp>
-
 #include <muduo/base/Types.h>
+#include <memory>
 #include <string>
 
 namespace muduo
@@ -39,7 +38,7 @@ class Heartbeat : muduo::noncopyable
   const std::string name_;
   const int port_;
   MasterService_Stub* stub_;
-  boost::scoped_ptr<ProcFs> procFs_;
+  std::unique_ptr<ProcFs> procFs_;
   bool beating_;
 };
 
