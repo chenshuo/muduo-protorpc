@@ -57,7 +57,6 @@ message SystemInfo
     optional string kernel_version = 1;
     optional string kernel_cmdline = 2;
     optional string cpuinfo = 3;
-    optional int64 boot_time = 4; // seconds since epoch
   }
 
   optional Basic basic = 1;
@@ -77,6 +76,7 @@ message SystemInfo
     // optional int64 idletime_ms = y;
 
     // stat
+    optional int64 boot_time = 9; // seconds since epoch
     optional int64 context_switches = 10;
     optional int64 processes_created = 11;
     optional int32 processes_running = 12;
@@ -99,6 +99,11 @@ message SystemInfo
   optional Cpu all_cpu = 3; // do we need this ?
   repeated Cpu cpus = 4;
 
+  optional fixed64 muduo_timestamp = 5;  // microseconds since epoch
+  // self overhead
+  optional int64 user_cpu_ms = 6;
+  optional int64 sys_cpu_ms = 7;
+
   // disk
 
   // network
@@ -113,6 +118,7 @@ message SnapshotRequest
     kSystemInfoOnly = 0;
     kSystemInfoAndProcesses = 1;
     kSystemInfoAndThreads = 2;
+    kSystemInfoInitialSnapshot = 3;  // cpuinfo, kernel cmdline and version
   }
 
   optional Level level = 1 [default = kSystemInfoOnly];
