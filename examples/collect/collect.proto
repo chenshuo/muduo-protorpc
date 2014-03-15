@@ -1,5 +1,7 @@
 package collect;
 
+option cc_generic_services = true;
+
 message ThreadInfo
 {
   optional int32 tid = 1;
@@ -102,4 +104,21 @@ message SystemInfo
   // network
 
   repeated ProcessInfo processes = 14;
+}
+
+message SnapshotRequest
+{
+  enum Level
+  {
+    kSystemInfoOnly = 0;
+    kSystemInfoAndProcesses = 1;
+    kSystemInfoAndThreads = 2;
+  }
+
+  optional Level level = 1 [default = kSystemInfoOnly];
+}
+
+service CollectService
+{
+  rpc getSnapshot(SnapshotRequest) returns (SystemInfo);
 }
