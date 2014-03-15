@@ -1,0 +1,105 @@
+package collect;
+
+message ThreadInfo
+{
+  optional int32 tid = 1;
+  optional string name = 2;
+
+  optional int64 user_cpu_ms = 3;
+  optional int64 sys_cpu_ms = 4;
+
+  optional int32 last_processor = 5;
+  optional int64 wait_channel = 6;
+}
+
+message ProcessInfo
+{
+  message Basic
+  {
+    // constant or almost constant
+    optional int32 pid = 1;
+    optional int32 uid = 2;
+    optional int32 ppid = 3;  // not constant
+    optional int64 starttime = 4;
+    optional string name = 5;
+    optional string cmdline = 6;
+  }
+
+  optional Basic basic = 1;
+
+  // cpu
+  optional int64 user_cpu_ms = 3;
+  optional int64 sys_cpu_ms = 4;
+  // optional int32 last_processor = 5;
+  // optional int64 wait_channel = 6;
+
+  // memory
+  optional int64 vsize_kb = 7;
+  optional int64 rss_kb = 8;
+  // only in 'status' file:
+  //  vsize_peak_kb
+  //  rss_peak_kb
+  //  data_kb
+
+  optional int64 minor_page_faults = 9;
+  optional int64 major_page_faults = 10;
+
+  optional int32 num_threads = 11;  // read from /proc/pid/stat
+  repeated ThreadInfo threads = 12; // read from /proc/pid/task/tid
+}
+
+message SystemInfo
+{
+  message Basic
+  {
+    optional string kernel_version = 1;
+    optional string kernel_cmdline = 2;
+    optional string cpuinfo = 3;
+    optional int64 boot_time = 4; // seconds since epoch
+  }
+
+  optional Basic basic = 1;
+
+  message Performance
+  {
+    // loadavg
+    optional int32 loadavg_1m = 2;  // 1/1000th
+    optional int32 loadavg_5m = 3;
+    optional int32 loadavg_15m = 4;
+    optional int32 running_tasks = 5;
+    optional int64 total_tasks = 6;
+    optional int32 last_pid = 7;
+
+    // uptime
+    // optional int64 uptime_ms = x;
+    // optional int64 idletime_ms = y;
+
+    // stat
+    optional int64 context_switches = 10;
+    optional int64 processes_created = 11;
+    optional int32 processes_running = 12;
+    optional int32 processes_blocked = 13;
+  }
+
+  optional Performance perf = 2;
+
+  // stat
+  message Cpu
+  {
+    optional int64 user_ms = 1;
+    optional int64 nice_ms = 2;
+    optional int64 sys_ms = 3;
+    optional int64 idle_ms = 4;
+    optional int64 iowait_ms = 5;
+    optional int64 irq_ms = 6;
+    optional int64 softirq_ms = 7;
+  }
+  optional Cpu all_cpu = 3; // do we need this ?
+  repeated Cpu cpus = 4;
+
+  // disk
+
+  // network
+
+  repeated ProcessInfo processes = 14;
+}

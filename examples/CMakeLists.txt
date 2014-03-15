@@ -16,6 +16,8 @@ function(PROTOBUF_GENERATE_RPC SRCS)
       ARGS --plugin=${PROJECT_BINARY_DIR}/bin/protoc-gen-rpc --rpc_out . ${CMAKE_CURRENT_SOURCE_DIR}/${FIL} -I${CMAKE_CURRENT_SOURCE_DIR} -I${PROJECT_SOURCE_DIR} -I${PROTOBUF_INCLUDE_DIR}
       COMMAND sed
       ARGS -i "s/#include <google\\/protobuf\\/service.h>/#include <muduo\\/protorpc2\\/service.h>/" ${FIL_WE}.pb.h
+      COMMAND sed
+      ARGS -i  "/protoc_insertion_point.includes./i#include <memory>" ${FIL_WE}.pb.h
       MAIN_DEPENDENCY ${FIL}
       DEPENDS protoc-gen-rpc
       VERBATIM )
@@ -32,6 +34,7 @@ else()
   add_subdirectory(resolver EXCLUDE_FROM_ALL)  # async response
 endif()
 
+add_subdirectory(collect)
 add_subdirectory(median)
 add_subdirectory(nqueens)
 add_subdirectory(wordfreq)
