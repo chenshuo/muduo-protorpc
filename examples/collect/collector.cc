@@ -33,6 +33,7 @@ class CollectLogger : muduo::noncopyable
     {
       LOG_INFO << info_.DebugString();
       save();
+      file_.flush();
       info_.Clear();
     }
     loop_->runEvery(1.0, std::bind(&CollectLogger::snapshot, this));
@@ -102,16 +103,26 @@ int main(int argc, char* argv[])
 {
   EventLoop loop;
 
-  Inspector ins(&loop, InetAddress(12345), "collector");
-  ins.remove("pprof", "profile"); // remove 30s blocking
-
   collect::CollectLogger logger(&loop, "collector");
   logger.start();
 
   collect::CollectServiceImpl impl(&logger);
-  RpcServer server(&loop, InetAddress(54321));
-  server.registerService(&impl);
-  server.start();
+  std::unique_ptr<RpcServer> server;
+  if (argc > 1)
+  {
+    uint16_t port = static_cast<uint16_t>(atoi(argv[1]));
+    server.reset(new RpcServer(&loop, InetAddress(port)));
+    server->registerService(&impl);
+    server->start();
+  }
+
+  std::unique_ptr<Inspector> ins;
+  if (argc > 2)
+  {
+    uint16_t port = static_cast<uint16_t>(atoi(argv[2]));
+    ins.reset(new Inspector(&loop, InetAddress(port), "collector"));
+    ins->remove("pprof", "profile"); // remove 30s blocking
+  }
 
   loop.loop();
 }

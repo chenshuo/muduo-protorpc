@@ -48,6 +48,29 @@ bool ProcFs::fill(SnapshotRequest_Level level, SystemInfo* info)
   return true;
 }
 
+bool ProcFs::readFile(muduo::StringArg filename, CacheLevel cache)
+{
+  if (cache == kNoCache)
+  {
+    return 0 == muduo::FileUtil::readFile(filename, 64*1024, &content_);
+  }
+  else
+  {
+    int fd = file_.getFile(filename, cache);
+    if (fd >= 0)
+    {
+      char buf[64*1024];
+      ssize_t n = ::pread(fd, buf, sizeof(buf), 0);
+      if (n >= 0)
+      {
+        content_.assign(buf, n);
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
 void ProcFs::fillInitial(SystemInfo* info)
 {
   // kernel versoin
@@ -113,6 +136,7 @@ struct LineReader
       content_.set("");
     }
 
+    // FIXME: doesn't work for /proc/pid/status, '\t' is the seperator
     const char* sp = static_cast<const char*>(::memchr(line_.data(), ' ', line_.size()));
     if (sp)
     {

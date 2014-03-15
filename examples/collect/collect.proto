@@ -108,6 +108,8 @@ message SystemInfo
 
   // network
 
+  // temperature
+
   repeated ProcessInfo processes = 14;
 }
 
