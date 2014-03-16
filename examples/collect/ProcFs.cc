@@ -19,13 +19,18 @@ int64_t toMilliseconds(double seconds)
 }
 
 ProcFs::ProcFs()
-  : millisecondsInOneTick_(1000 / muduo::ProcessInfo::clockTicksPerSecond()),
+  : millisecondsPerTick_(1000 / muduo::ProcessInfo::clockTicksPerSecond()),
+    kbPerPage_(muduo::ProcessInfo::pageSize() / 1024),
     file_(std::min(200, muduo::ProcessInfo::maxOpenFiles() - 100))
 {
   long hz = muduo::ProcessInfo::clockTicksPerSecond();
   if (1000 % hz != 0)
   {
     LOG_FATAL << "_SC_CLK_TCK is not a divisible";
+  }
+  if (muduo::ProcessInfo::pageSize() % 1024 != 0)
+  {
+    LOG_FATAL << "_SC_PAGE_SIZE is not a divisible by 1024";
   }
 }
 
@@ -149,7 +154,7 @@ struct LineReader
     if (pos)
     {
       line_.set(content_.data(), static_cast<int>(pos - content_.data()));
-      content_.set(pos+1, content_.size() - line_.size() - 1);
+      content_.remove_prefix(line_.size() + 1);
     }
     else
     {
@@ -196,13 +201,13 @@ void ProcFs::fillCpu(SystemInfo_Cpu* cpu, StringPiece value)
              &user, &nice, &sys, &idle,
              &iowait, &irq, &softirq) == 7)
   {
-    cpu->set_user_ms(user * millisecondsInOneTick_);
-    cpu->set_nice_ms(nice * millisecondsInOneTick_);
-    cpu->set_sys_ms(sys * millisecondsInOneTick_);
-    cpu->set_idle_ms(idle * millisecondsInOneTick_);
-    cpu->set_iowait_ms(iowait * millisecondsInOneTick_);
-    cpu->set_irq_ms(irq * millisecondsInOneTick_);
-    cpu->set_softirq_ms(softirq * millisecondsInOneTick_);
+    cpu->set_user_ms(user * millisecondsPerTick_);
+    cpu->set_nice_ms(nice * millisecondsPerTick_);
+    cpu->set_sys_ms(sys * millisecondsPerTick_);
+    cpu->set_idle_ms(idle * millisecondsPerTick_);
+    cpu->set_iowait_ms(iowait * millisecondsPerTick_);
+    cpu->set_irq_ms(irq * millisecondsPerTick_);
+    cpu->set_softirq_ms(softirq * millisecondsPerTick_);
   }
 }
 
@@ -297,7 +302,6 @@ struct FieldReader
   FieldReader(StringPiece content)
     : content_(content)
   {
-    next();
   }
 
   void next()
@@ -305,35 +309,32 @@ struct FieldReader
     const char* sp = static_cast<const char*>(::memchr(content_.data(), ' ', content_.size()));
     if (sp)
     {
-      field_.set(content_.data(), static_cast<int>(sp - content_.data()));
-      // while (*sp == ' ')
-      //   ++sp;
-      content_.set(sp+1, content_.size() - field_.size() - 1);
+      moveForward(sp+1);
     }
     else
     {
-      field_ = content_;
       content_ = "";
     }
   }
 
   int64_t readInt64()
   {
-    int64_t x = static_cast<int64_t>(::strtoll(field_.data(), NULL, 10));
-    next();
+    char* end = NULL;
+    int64_t x = static_cast<int64_t>(::strtoll(content_.data(), &end, 10));
+    while (*end == ' ')
+      ++end;
+    moveForward(end);
     return x;
   }
 
   int32_t readInt32()
   {
-    int x = static_cast<int32_t>(::strtol(field_.data(), NULL, 10));
-    next();
+    char* end = NULL;
+    int x = static_cast<int32_t>(::strtol(content_.data(), &end, 10));
+    while (*end == ' ')
+      ++end;
+    moveForward(end);
     return x;
-  }
-
-  int32_t asInt32() const
-  {
-    return static_cast<int32_t>(::strtol(field_.data(), NULL, 10));
   }
 
   std::string readName()
@@ -344,20 +345,68 @@ struct FieldReader
     if (end)
     {
       result.assign(content_.data()+1, end);
-      content_.set(end+2, static_cast<int>(content_.data()+content_.size()-end-2));
+      moveForward(end+2);
     }
     return result;
   }
 
+  void moveForward(const char* newstart)
+  {
+    assert(content_.begin() <= newstart && newstart < content_.end());
+    content_.remove_prefix(static_cast<int>(newstart - content_.begin()));
+    assert(newstart == content_.data());
+  }
+
   StringPiece content_;
-  StringPiece field_;
 };
 
 void ProcFs::fillProcess(ProcessInfo* info)
 {
   FieldReader r(content_);
-  info->set_pid(r.asInt32());
-  info->mutable_basic()->set_name(r.readName());
-  // FIXME
+  info->set_pid(r.readInt32());
+  std::string name = r.readName();
+  char state = r.content_[0];
+  r.next();
+  info->set_state(state);
+  int ppid = r.readInt32();
+  r.next(); // pgrp
+  r.next(); // session
+  r.next(); // tty_nr
+  r.next(); // tpgid
+  r.next(); // flags
+  info->set_minor_page_faults(r.readInt64());
+  r.next(); // cminflt
+  info->set_major_page_faults(r.readInt64());
+  r.next(); // cmajflt
+  info->set_user_cpu_ms(r.readInt64() * millisecondsPerTick_);
+  info->set_sys_cpu_ms(r.readInt64() * millisecondsPerTick_);
+  r.next(); // cutime
+  r.next(); // cstime
+  r.next(); // priority
+  r.next(); // nice
+  info->set_num_threads(r.readInt32());
+  r.next(); // iteralvalue
+  int64_t starttime = r.readInt64();
+  info->set_vsize_kb(r.readInt64() / 1024);
+  info->set_rss_kb(r.readInt64() * kbPerPage_);
+  r.next(); // rsslim
+  r.next(); // startcode
+  r.next(); // endcode
+  r.next(); // startstack
+  r.next(); // kstkesp
+  r.next(); // kstkeip
+  r.next(); // signal
+  r.next(); // blocked
+  r.next(); // sigignore
+  r.next(); // sigcatch
+  int64_t wait_channel = r.readInt64();
+  r.next(); // nswap
+  r.next(); // cnswap
+  r.next(); // exit_signal
+  info->set_last_processor(r.readInt32());
+  (void)ppid;
+  (void)starttime;
+  (void)wait_channel;
+  // info->set_wait_channel(r.readInt64());
 }
 }

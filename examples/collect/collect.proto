@@ -5,13 +5,15 @@ option cc_generic_services = true;
 message ThreadInfo
 {
   optional int32 tid = 1;
-  optional string name = 2;
 
   optional int64 user_cpu_ms = 3;
   optional int64 sys_cpu_ms = 4;
 
   optional int32 last_processor = 5;
   optional int64 wait_channel = 6;
+
+  optional string name = 7;
+  optional int64 starttime = 8;
 }
 
 message ProcessInfo
@@ -33,8 +35,8 @@ message ProcessInfo
   // cpu
   optional int64 user_cpu_ms = 3;
   optional int64 sys_cpu_ms = 4;
-  // optional int32 last_processor = 5;
-  // optional int64 wait_channel = 6;
+  optional int32 last_processor = 5;
+  optional int64 wait_channel = 6;
 
   // memory
   optional int64 vsize_kb = 7;
@@ -44,11 +46,12 @@ message ProcessInfo
   //  rss_peak_kb
   //  data_kb
 
-  optional int64 minor_page_faults = 9;
-  optional int64 major_page_faults = 10;
+  optional int32 state = 9;  // "RSDZTW"
+  optional int64 minor_page_faults = 10;
+  optional int64 major_page_faults = 11;
 
-  optional int32 num_threads = 11;  // read from /proc/pid/stat
-  repeated ThreadInfo threads = 12; // read from /proc/pid/task/tid
+  optional int32 num_threads = 12;  // read from /proc/pid/stat
+  repeated ThreadInfo threads = 13; // read from /proc/pid/task/tid
 }
 
 message SystemInfo

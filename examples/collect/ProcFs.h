@@ -36,7 +36,8 @@ class ProcFs : muduo::noncopyable
     return content_;
   }
 
-  const int64_t millisecondsInOneTick_;
+  const int64_t millisecondsPerTick_;
+  const int32_t kbPerPage_;  // doesn't work on VAX, which has 512-byte pages
   FileCache file_;
 
   std::string content_;  // for scratch
