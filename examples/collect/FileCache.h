@@ -1,5 +1,6 @@
 #pragma once
 #include <muduo/base/ProcessInfo.h>
+#include <list>
 #include <unordered_map>
 #include <fcntl.h>
 
@@ -17,8 +18,13 @@ class FileCache : muduo::noncopyable
   class File : muduo::noncopyable
   {
    public:
-    File(int f = -1) noexcept
-      : fd_(f)
+    File() noexcept
+      : fd_(-1)
+    {
+    }
+
+    File(const std::string& filename)
+      : fd_(::open(filename.c_str(), O_RDONLY | O_CLOEXEC))
     {
     }
 
@@ -55,34 +61,76 @@ class FileCache : muduo::noncopyable
   };
 
  public:
-  FileCache()
-    : maxFiles_(muduo::ProcessInfo::maxOpenFiles())
+  FileCache(unsigned maxFiles)
+    : maxFiles_(maxFiles)
   {
   }
 
-  int getFile(muduo::StringArg filename, CacheLevel cache)
+  int getFile(const std::string& filename, CacheLevel cache)
   {
     assert(cache == kKeep || cache == kLRU);
-    
+
     if (cache == kKeep)
     {
-      File& f = keep_[filename.c_str()];
+      File& f = keep_[filename];
       if (!f.valid())
       {
-        f = File(::open(filename.c_str(), O_RDONLY | O_CLOEXEC));
+        f = File(filename);
       }
       return f.fd();
     }
     else
     {
-      // FIXME:
-      abort();
+      assert(list_.size() == map_.size());
+      auto it = map_.find(filename);
+      if (it != map_.end())
+      {
+        list_.splice(list_.begin(), list_, it->second.second);
+        return it->second.first.fd();
+      }
+      else
+      {
+        list_.push_front(filename);
+        // emplace is not available in g++ 4.6
+        auto result = map_.insert(std::make_pair(filename, std::make_pair(File(filename), list_.begin())));
+        assert(result.second);
+        assert(list_.size() == map_.size());
+        if (map_.size() > maxFiles_)
+        {
+          map_.erase(list_.back());
+          list_.pop_back();
+        }
+        assert(list_.size() == map_.size());
+        return result.first->second.first.fd();  // 1-2-1 1-2-1 1-2-1
+      }
     }
+  }
+
+  void closeFile(const std::string& filename)
+  {
+    auto it = map_.find(filename);
+    if (it != map_.end())
+    {
+      list_.erase(it->second.second);
+      map_.erase(it);
+    }
+  }
+
+  void print()
+  {
+    for (auto& x : list_)
+    {
+      printf("%s ", x.c_str());
+    }
+    puts("");
   }
 
  private:
   std::unordered_map<std::string, File> keep_;
-  const int maxFiles_;
+  const unsigned maxFiles_;
+  std::list<std::string> list_;
+  typedef std::pair<File, std::list<std::string>::iterator> Entry;
+  std::unordered_map<std::string, Entry> map_;
 };
 
 }

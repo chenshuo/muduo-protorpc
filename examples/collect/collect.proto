@@ -16,10 +16,11 @@ message ThreadInfo
 
 message ProcessInfo
 {
+  optional int32 pid = 1;
+
   message Basic
   {
     // constant or almost constant
-    optional int32 pid = 1;
     optional int32 uid = 2;
     optional int32 ppid = 3;  // not constant
     optional int64 starttime = 4;
@@ -27,7 +28,7 @@ message ProcessInfo
     optional string cmdline = 6;
   }
 
-  optional Basic basic = 1;
+  optional Basic basic = 2;
 
   // cpu
   optional int64 user_cpu_ms = 3;

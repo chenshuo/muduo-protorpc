@@ -4,6 +4,8 @@
 #include <muduo/base/Logging.h>
 #include <muduo/base/ProcessInfo.h>
 
+#include <dirent.h>
+
 // namespace ProcessInfo = muduo::ProcessInfo;
 using muduo::Timestamp;
 using muduo::StringPiece;
@@ -17,7 +19,8 @@ int64_t toMilliseconds(double seconds)
 }
 
 ProcFs::ProcFs()
-  : millisecondsInOneTick_(1000 / muduo::ProcessInfo::clockTicksPerSecond())
+  : millisecondsInOneTick_(1000 / muduo::ProcessInfo::clockTicksPerSecond()),
+    file_(std::min(200, muduo::ProcessInfo::maxOpenFiles() - 100))
 {
   long hz = muduo::ProcessInfo::clockTicksPerSecond();
   if (1000 % hz != 0)
@@ -35,20 +38,18 @@ bool ProcFs::fill(SnapshotRequest_Level level, SystemInfo* info)
 
   if (level >= SnapshotRequest_Level_kSystemInfoAndProcesses)
   {
-    if (level >= SnapshotRequest_Level_kSystemInfoAndThreads)
-    {
-      if (level >= SnapshotRequest_Level_kSystemInfoInitialSnapshot)
-      {
-        fillInitial(info);
-      }
-    }
+    fillProcesses(level, info);
+  }
+  if (level >= SnapshotRequest_Level_kSystemInfoInitialSnapshot)
+  {
+    fillInitial(info);
   }
   fillLoadAvg(info);
   fillStat(info);
   return true;
 }
 
-bool ProcFs::readFile(muduo::StringArg filename, CacheLevel cache)
+bool ProcFs::readFile(const std::string& filename, CacheLevel cache)
 {
   if (cache == kNoCache)
   {
@@ -57,6 +58,7 @@ bool ProcFs::readFile(muduo::StringArg filename, CacheLevel cache)
   else
   {
     int fd = file_.getFile(filename, cache);
+    // file_.print();
     if (fd >= 0)
     {
       char buf[64*1024];
@@ -66,8 +68,28 @@ bool ProcFs::readFile(muduo::StringArg filename, CacheLevel cache)
         content_.assign(buf, n);
         return true;
       }
+      else
+      {
+        LOG_INFO << "read error " << filename;
+        file_.closeFile(filename);
+        // FIXME: reopen and retry
+      }
     }
     return false;
+  }
+}
+
+void ProcFs::readDir(const char* dirname, std::function<void(const char*)>&& func)
+{
+  DIR* dir = ::opendir(dirname);
+  if (dir)
+  {
+    std::shared_ptr<void> x = std::shared_ptr<DIR>(dir, ::closedir);
+    struct dirent* ent;
+    while ( (ent = readdir(dir)) != NULL)
+    {
+      func(ent->d_name);
+    }
   }
 }
 
@@ -92,7 +114,6 @@ void ProcFs::fillInitial(SystemInfo* info)
 
 void ProcFs::fillLoadAvg(SystemInfo* info)
 {
-
   if (readFile("/proc/loadavg", kKeep))
   {
     // LOG_INFO << "loadavg " << content_;
@@ -133,7 +154,7 @@ struct LineReader
     else
     {
       line_ = content_;
-      content_.set("");
+      content_ = "";
     }
 
     // FIXME: doesn't work for /proc/pid/status, '\t' is the seperator
@@ -145,8 +166,8 @@ struct LineReader
     }
     else
     {
-      key.set("");
-      value.set("");
+      key = "";
+      value = "";
     }
   }
 
@@ -249,4 +270,94 @@ void ProcFs::fillStat(SystemInfo* info)
   }
 }
 
+void ProcFs::fillProcesses(SnapshotRequest_Level level, SystemInfo* info)
+{
+  readDir("/proc", [=](const char* name) {
+    if (::isdigit(name[0]))
+    {
+      //int pid = atoi(name);
+      char buf[64];
+      snprintf(buf, sizeof buf, "/proc/%s/stat", name);
+      if (readFile(buf, kLRU))
+      {
+        auto proc = info->add_processes();
+        fillProcess(proc);
+        if (level >= SnapshotRequest_Level_kSystemInfoAndThreads)
+        {
+          // fillThreads(pid, info);
+        }
+      }
+    }
+ });
+}
+
+struct FieldReader
+{
+ public:
+  FieldReader(StringPiece content)
+    : content_(content)
+  {
+    next();
+  }
+
+  void next()
+  {
+    const char* sp = static_cast<const char*>(::memchr(content_.data(), ' ', content_.size()));
+    if (sp)
+    {
+      field_.set(content_.data(), static_cast<int>(sp - content_.data()));
+      // while (*sp == ' ')
+      //   ++sp;
+      content_.set(sp+1, content_.size() - field_.size() - 1);
+    }
+    else
+    {
+      field_ = content_;
+      content_ = "";
+    }
+  }
+
+  int64_t readInt64()
+  {
+    int64_t x = static_cast<int64_t>(::strtoll(field_.data(), NULL, 10));
+    next();
+    return x;
+  }
+
+  int32_t readInt32()
+  {
+    int x = static_cast<int32_t>(::strtol(field_.data(), NULL, 10));
+    next();
+    return x;
+  }
+
+  int32_t asInt32() const
+  {
+    return static_cast<int32_t>(::strtol(field_.data(), NULL, 10));
+  }
+
+  std::string readName()
+  {
+    std::string result;
+    assert(content_[0] == '(');
+    const char* end = static_cast<const char*>(::memchr(content_.data(), ')', content_.size()));
+    if (end)
+    {
+      result.assign(content_.data()+1, end);
+      content_.set(end+2, static_cast<int>(content_.data()+content_.size()-end-2));
+    }
+    return result;
+  }
+
+  StringPiece content_;
+  StringPiece field_;
+};
+
+void ProcFs::fillProcess(ProcessInfo* info)
+{
+  FieldReader r(content_);
+  info->set_pid(r.asInt32());
+  info->mutable_basic()->set_name(r.readName());
+  // FIXME
+}
 }

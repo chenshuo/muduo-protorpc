@@ -20,8 +20,11 @@ class ProcFs : muduo::noncopyable
   void fillLoadAvg(SystemInfo* info);
   void fillStat(SystemInfo* info);
   void fillCpu(SystemInfo_Cpu* cpu, muduo::StringPiece value);
+  void fillProcesses(SnapshotRequest_Level, SystemInfo* info);
+  void fillProcess(ProcessInfo* info);
 
-  bool readFile(muduo::StringArg filename, CacheLevel cache);
+  bool readFile(const std::string& filename, CacheLevel cache);
+  void readDir(const char* dirname, std::function<void(const char*)>&& func);
 
   const std::string& chomp()
   {

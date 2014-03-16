@@ -31,7 +31,7 @@ class CollectLogger : muduo::noncopyable
   {
     if (proc_.fill(SnapshotRequest_Level_kSystemInfoInitialSnapshot, &info_))
     {
-      LOG_INFO << info_.DebugString();
+      // printf("%s\n", info_.ShortDebugString().c_str());
       save();
       file_.flush();
       info_.Clear();
@@ -63,7 +63,7 @@ class CollectLogger : muduo::noncopyable
   void save()
   {
     codec_.fillEmptyBuffer(&output_, info_);
-    // LOG_INFO << output_.readableBytes();
+    LOG_DEBUG << output_.readableBytes();
     file_.append(output_.peek(), static_cast<int>(output_.readableBytes()));
     output_.retrieveAll();
   }
