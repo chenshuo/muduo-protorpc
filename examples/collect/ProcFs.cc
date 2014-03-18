@@ -21,7 +21,8 @@ int64_t toMilliseconds(double seconds)
 ProcFs::ProcFs()
   : millisecondsPerTick_(1000 / muduo::ProcessInfo::clockTicksPerSecond()),
     kbPerPage_(muduo::ProcessInfo::pageSize() / 1024),
-    file_(std::min(1000, muduo::ProcessInfo::maxOpenFiles() - 100))
+    file_(std::min(1000, muduo::ProcessInfo::maxOpenFiles() - 100)),
+    count_(0)
 {
   long hz = muduo::ProcessInfo::clockTicksPerSecond();
   if (1000 % hz != 0)
@@ -39,6 +40,11 @@ ProcFs::ProcFs()
 
 bool ProcFs::fill(SnapshotRequest_Level level, SystemInfo* info)
 {
+  if (++count_ >= 60)
+  {
+    count_ = 0;
+    starttime_.clear();
+  }
   filename_ = "/dev/null";
   file_.setSentryFile(filename_);
   info->set_muduo_timestamp(Timestamp::now().microSecondsSinceEpoch());
@@ -437,10 +443,37 @@ void ProcFs::fillProcess(ProcessInfo* info)
   if (it == starttime_.end() || it->second != starttime)
   {
     starttime_[pid] = starttime;
+    // FIXME: uid
     info->mutable_basic()->set_ppid(ppid);
     info->mutable_basic()->set_starttime(starttime);
     info->mutable_basic()->set_name(name_);
+    fillCmdline(pid, info->mutable_basic());
     LOG_DEBUG << "new process " << pid << " "  << name_;
   }
 }
+
+void ProcFs::fillCmdline(int pid, ProcessInfo_Basic* basic)
+{
+  char buf[64];
+  snprintf(buf, sizeof buf, "/proc/%d/cmdline", pid);
+  filename_ = buf;
+  if (readFile(filename_, kNoCache))
+  {
+    const char* end = content_.data() + content_.size();
+    for (const char* s = content_.data(); s < end;)
+    {
+      size_t len = strlen(s);
+      basic->add_cmdline(s);
+      s += len+1;
+    }
+  }
+  snprintf(buf, sizeof buf, "/proc/%d/exe", pid);
+  char executable[1024];
+  ssize_t len = ::readlink(buf, executable, sizeof executable);
+  if (len > 0)
+  {
+    basic->set_executable(executable, len);
+  }
+}
+
 }

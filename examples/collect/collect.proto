@@ -25,11 +25,13 @@ message ProcessInfo
   message Basic
   {
     // constant or almost constant
-    optional int32 uid = 2;
+    optional int32 uid = 1;
+    optional int32 euid = 2;
     optional int32 ppid = 3;  // not constant
     optional int64 starttime = 4;
     optional string name = 5;
-    optional string cmdline = 6;
+    repeated string cmdline = 6;
+    optional string executable = 7;
   }
 
   optional Basic basic = 2;
@@ -38,7 +40,7 @@ message ProcessInfo
   optional int64 user_cpu_ms = 3;
   optional int64 sys_cpu_ms = 4;
   optional int32 last_processor = 5;
-  optional int64 wait_channel = 6;
+  optional int32 wait_channel = 6;
 
   // memory
   optional int64 vsize_kb = 7;
