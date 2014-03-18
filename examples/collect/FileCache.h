@@ -1,4 +1,5 @@
 #pragma once
+#include <muduo/base/Logging.h>
 #include <muduo/base/ProcessInfo.h>
 #include <list>
 #include <unordered_map>
@@ -120,9 +121,27 @@ class FileCache : muduo::noncopyable
   {
     for (auto& x : list_)
     {
-      printf("%s ", x.c_str());
+      printf("%s\n", x.c_str());
     }
-    puts("");
+    puts("==========");
+  }
+
+  void setSentryFile(const std::string& sentry)
+  {
+    getFile(sentry, kLRU);
+  }
+
+  void closeUnusedFiles(const std::string& sentry)
+  {
+    if (map_.count(sentry) > 0)
+    {
+      while (!list_.empty() && list_.back() != sentry)
+      {
+        LOG_DEBUG << "close " << list_.back();
+        map_.erase(list_.back());
+        list_.pop_back();
+      }
+    }
   }
 
  private:

@@ -21,7 +21,7 @@ int64_t toMilliseconds(double seconds)
 ProcFs::ProcFs()
   : millisecondsPerTick_(1000 / muduo::ProcessInfo::clockTicksPerSecond()),
     kbPerPage_(muduo::ProcessInfo::pageSize() / 1024),
-    file_(std::min(200, muduo::ProcessInfo::maxOpenFiles() - 100))
+    file_(std::min(1000, muduo::ProcessInfo::maxOpenFiles() - 100))
 {
   long hz = muduo::ProcessInfo::clockTicksPerSecond();
   if (1000 % hz != 0)
@@ -32,10 +32,15 @@ ProcFs::ProcFs()
   {
     LOG_FATAL << "_SC_PAGE_SIZE is not a divisible by 1024";
   }
+  name_.reserve(20);
+  filename_.reserve(60);
+  content_.reserve(500);
 }
 
 bool ProcFs::fill(SnapshotRequest_Level level, SystemInfo* info)
 {
+  filename_ = "/dev/null";
+  file_.setSentryFile(filename_);
   info->set_muduo_timestamp(Timestamp::now().microSecondsSinceEpoch());
   muduo::ProcessInfo::CpuTime t = muduo::ProcessInfo::cpuTime();
   info->set_user_cpu_ms(toMilliseconds(t.userSeconds));
@@ -51,6 +56,8 @@ bool ProcFs::fill(SnapshotRequest_Level level, SystemInfo* info)
   }
   fillLoadAvg(info);
   fillStat(info);
+  filename_ = "/dev/null";
+  file_.closeUnusedFiles(filename_);
   return true;
 }
 
@@ -75,7 +82,7 @@ bool ProcFs::readFile(const std::string& filename, CacheLevel cache)
       }
       else
       {
-        LOG_INFO << "read error " << filename;
+        LOG_ERROR << "read error " << filename;
         file_.closeFile(filename);
         // FIXME: reopen and retry
       }
@@ -84,14 +91,31 @@ bool ProcFs::readFile(const std::string& filename, CacheLevel cache)
   }
 }
 
-void ProcFs::readDir(const char* dirname, std::function<void(const char*)>&& func)
+class Defer : muduo::noncopyable
+{
+ public:
+  Defer(std::function<void()>&& f)
+    : func_(std::move(f))
+  {
+  }
+
+  ~Defer()
+  {
+    func_();
+  }
+ private:
+  std::function<void()> func_;
+};
+
+void ProcFs::readDir(const char* dirname, DIRFUNC&& func)
 {
   DIR* dir = ::opendir(dirname);
   if (dir)
   {
-    std::shared_ptr<void> x = std::shared_ptr<DIR>(dir, ::closedir);
+    // std::shared_ptr<void> x = std::shared_ptr<DIR>(dir, ::closedir);
+    Defer d1([dir]{ ::closedir(dir); });
     struct dirent* ent;
-    while ( (ent = readdir(dir)) != NULL)
+    while ( (ent = ::readdir(dir)) != NULL)
     {
       func(ent->d_name);
     }
@@ -119,7 +143,8 @@ void ProcFs::fillInitial(SystemInfo* info)
 
 void ProcFs::fillLoadAvg(SystemInfo* info)
 {
-  if (readFile("/proc/loadavg", kKeep))
+  filename_ = "/proc/loadavg";
+  if (readFile(filename_, kKeep))
   {
     // LOG_INFO << "loadavg " << content_;
     double loadavg_1m = 0, loadavg_5m = 0, loadavg_15m = 0;
@@ -213,7 +238,8 @@ void ProcFs::fillCpu(SystemInfo_Cpu* cpu, StringPiece value)
 
 void ProcFs::fillStat(SystemInfo* info)
 {
-  if (readFile("/proc/stat", kKeep))
+  filename_ = "/proc/stat";
+  if (readFile(filename_, kKeep))
   {
     LineReader r(content_);
     if (r.key == "cpu")
@@ -283,7 +309,8 @@ void ProcFs::fillProcesses(SnapshotRequest_Level level, SystemInfo* info)
       //int pid = atoi(name);
       char buf[64];
       snprintf(buf, sizeof buf, "/proc/%s/stat", name);
-      if (readFile(buf, kLRU))
+      filename_ = buf;
+      if (readFile(filename_, kLRU))
       {
         auto proc = info->add_processes();
         fillProcess(proc);
@@ -293,7 +320,7 @@ void ProcFs::fillProcesses(SnapshotRequest_Level level, SystemInfo* info)
         }
       }
     }
- });
+  });
 }
 
 struct FieldReader
@@ -337,17 +364,15 @@ struct FieldReader
     return x;
   }
 
-  std::string readName()
+  void readName(std::string* result)
   {
-    std::string result;
     assert(content_[0] == '(');
     const char* end = static_cast<const char*>(::memchr(content_.data(), ')', content_.size()));
     if (end)
     {
-      result.assign(content_.data()+1, end);
+      result->assign(content_.data()+1, end);
       moveForward(end+2);
     }
-    return result;
   }
 
   void moveForward(const char* newstart)
@@ -363,8 +388,9 @@ struct FieldReader
 void ProcFs::fillProcess(ProcessInfo* info)
 {
   FieldReader r(content_);
-  info->set_pid(r.readInt32());
-  std::string name = r.readName();
+  int pid = r.readInt32();
+  info->set_pid(pid);
+  r.readName(&name_);
   char state = r.content_[0];
   r.next();
   info->set_state(state);
@@ -404,9 +430,17 @@ void ProcFs::fillProcess(ProcessInfo* info)
   r.next(); // cnswap
   r.next(); // exit_signal
   info->set_last_processor(r.readInt32());
-  (void)ppid;
-  (void)starttime;
   (void)wait_channel;
-  // info->set_wait_channel(r.readInt64());
+  // FIXME: info->set_wait_channel(r.readInt64());
+
+  auto it = starttime_.find(pid);
+  if (it == starttime_.end() || it->second != starttime)
+  {
+    starttime_[pid] = starttime;
+    info->mutable_basic()->set_ppid(ppid);
+    info->mutable_basic()->set_starttime(starttime);
+    info->mutable_basic()->set_name(name_);
+    LOG_DEBUG << "new process " << pid << " "  << name_;
+  }
 }
 }

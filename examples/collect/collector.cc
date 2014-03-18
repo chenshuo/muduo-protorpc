@@ -8,6 +8,9 @@
 #include <muduo/net/EventLoopThread.h>
 #include <muduo/net/protobuf/ProtobufCodecLite.h>
 #include <muduo/protorpc2/RpcServer.h>
+#include <google/malloc_hook.h>
+
+#include <signal.h>
 
 using namespace muduo;
 
@@ -23,7 +26,7 @@ class CollectLogger : muduo::noncopyable
   CollectLogger(muduo::net::EventLoop* loop, const string& filename)
     : loop_(loop),
       codec_(std::bind(&CollectLogger::onMessage, this, _1, _2, _3)),
-      file_(filename, 1000*1000, false, 60, 30) // flush every 60s, check every 30 writes
+      file_(filename, 100*1000*1000, false, 60, 30) // flush every 60s, check every 30 writes
   {
   }
 
@@ -51,6 +54,16 @@ class CollectLogger : muduo::noncopyable
       save();
       info_.Clear();
     }
+  }
+
+  void flush()
+  {
+    file_.flush();
+  }
+
+  void roll()
+  {
+    file_.rollFile();
   }
 
  private:
@@ -86,22 +99,56 @@ class CollectServiceImpl : public CollectService
 
   virtual void getSnapshot(const ::collect::SnapshotRequestPtr& request,
                            const ::collect::SystemInfo* responsePrototype,
-                           const ::muduo::net::RpcDoneCallback& done)
+                           const ::muduo::net::RpcDoneCallback& done) // override
   {
     SystemInfo response;
     logger_->fill(request->level(), &response);
     done(&response);
   }
+
+  virtual void flush(const ::rpc2::EmptyPtr& request,
+                     const ::rpc2::Empty* responsePrototype,
+                     const ::muduo::net::RpcDoneCallback& done) // override
+  {
+    logger_->flush();
+    ::rpc2::Empty response;
+    done(&response);
+  }
+
+  virtual void roll(const ::rpc2::EmptyPtr& request,
+                    const ::rpc2::Empty* responsePrototype,
+                    const ::muduo::net::RpcDoneCallback& done) // override
+  {
+    logger_->roll();
+    ::rpc2::Empty response;
+    done(&response);
+  }
+
  private:
   CollectLogger* logger_;
 };
 }
 
 using namespace muduo::net;
+EventLoop* g_loop;
+
+void sighandler(int)
+{
+  g_loop->quit();
+}
+
+void NewHook(const void* ptr, size_t size)
+{
+  printf("alloc %zd %p\n", size, ptr);
+}
 
 int main(int argc, char* argv[])
 {
   EventLoop loop;
+  g_loop = &loop;
+  signal(SIGINT, sighandler);
+  signal(SIGTERM, sighandler);
+  // MallocHook::SetNewHook(&NewHook);
 
   collect::CollectLogger logger(&loop, "collector");
   logger.start();
@@ -125,4 +172,5 @@ int main(int argc, char* argv[])
   }
 
   loop.loop();
+  google::protobuf::ShutdownProtobufLibrary();
 }

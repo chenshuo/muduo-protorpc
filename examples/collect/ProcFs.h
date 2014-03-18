@@ -24,7 +24,8 @@ class ProcFs : muduo::noncopyable
   void fillProcess(ProcessInfo* info);
 
   bool readFile(const std::string& filename, CacheLevel cache);
-  void readDir(const char* dirname, std::function<void(const char*)>&& func);
+  typedef std::function<void(const char*)> DIRFUNC;
+  void readDir(const char* dirname, DIRFUNC&& func);
 
   const std::string& chomp()
   {
@@ -39,7 +40,11 @@ class ProcFs : muduo::noncopyable
   const int64_t millisecondsPerTick_;
   const int32_t kbPerPage_;  // doesn't work on VAX, which has 512-byte pages
   FileCache file_;
+  std::unordered_map<int, int64_t> starttime_;
+  // FIXME: std::unordered_map<int, int> ppid_;
 
+  std::string name_;  // for scratch
+  std::string filename_;  // for scratch
   std::string content_;  // for scratch
 };
 }

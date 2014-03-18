@@ -2,6 +2,8 @@ package collect;
 
 option cc_generic_services = true;
 
+import "muduo/protorpc2/rpc2.proto";
+
 message ThreadInfo
 {
   optional int32 tid = 1;
@@ -133,4 +135,6 @@ message SnapshotRequest
 service CollectService
 {
   rpc getSnapshot(SnapshotRequest) returns (SystemInfo);
+  rpc flush(rpc2.Empty) returns (rpc2.Empty);
+  rpc roll(rpc2.Empty) returns (rpc2.Empty);
 }
