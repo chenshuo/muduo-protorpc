@@ -55,6 +55,12 @@ func Send(c io.Writer, msg *RpcMessage) error {
 }
 
 func Decode(r io.Reader) (msg *RpcMessage, err error) {
+	msg = new(RpcMessage)
+	err = DecodeGeneral(r, msg, "RPC0")
+	return msg, err
+}
+
+func DecodeGeneral(r io.Reader, msg proto.Message, tag string) (err error) {
 	header := make([]byte, 4)
 	_, err = io.ReadFull(r, header)
 	if err != nil {
@@ -62,9 +68,8 @@ func Decode(r io.Reader) (msg *RpcMessage, err error) {
 	}
 
 	length := binary.BigEndian.Uint32(header)
-	if length > 64*1024*1024 {
-		err = fmt.Errorf("Invalid length %d", length)
-		return
+	if length > 64*1024*1024 || length < uint32(len(tag) + 4) {
+		return fmt.Errorf("Invalid length %d", length)
 	}
 
 	payload := make([]byte, length)
@@ -73,18 +78,14 @@ func Decode(r io.Reader) (msg *RpcMessage, err error) {
 		return
 	}
 
-	if string(payload[:4]) != "RPC0" {
-		err = fmt.Errorf("Wrong marker")
-		return
+	if string(payload[:len(tag)]) != tag {
+		return fmt.Errorf("Wrong marker")
 	}
 
 	checksum := adler32.Checksum(payload[:length-4])
 	if checksum != binary.BigEndian.Uint32(payload[length-4:]) {
-		err = fmt.Errorf("Wrong checksum")
-		return
+		return fmt.Errorf("Wrong checksum")
 	}
 
-	msg = new(RpcMessage)
-	err = proto.Unmarshal(payload[4:length-4], msg)
-	return
+	return proto.Unmarshal(payload[4:length-4], msg)
 }
