@@ -134,9 +134,18 @@ message SnapshotRequest
   optional Level level = 1 [default = kSystemInfoOnly];
 }
 
+message Result
+{
+  required bool succeed = 1;
+  optional string message = 2;
+}
+
 service CollectService
 {
   rpc getSnapshot(SnapshotRequest) returns (SystemInfo);
-  rpc flush(rpc2.Empty) returns (rpc2.Empty);
-  rpc roll(rpc2.Empty) returns (rpc2.Empty);
+  rpc flushFile(rpc2.Empty) returns (rpc2.Empty);
+  rpc rollFile(rpc2.Empty) returns (Result);
+  rpc version(rpc2.Empty) returns (Result);
+  rpc quit(rpc2.Empty) returns (Result);
+  rpc restart(rpc2.Empty) returns (Result);
 }

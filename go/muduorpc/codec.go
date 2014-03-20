@@ -68,7 +68,7 @@ func DecodeGeneral(r io.Reader, msg proto.Message, tag string) (err error) {
 	}
 
 	length := binary.BigEndian.Uint32(header)
-	if length > 64*1024*1024 || length < uint32(len(tag) + 4) {
+	if length > 64*1024*1024 || length < uint32(len(tag)+4) {
 		return fmt.Errorf("Invalid length %d", length)
 	}
 

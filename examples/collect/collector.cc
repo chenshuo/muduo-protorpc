@@ -12,6 +12,8 @@
 
 #include <signal.h>
 
+extern const char* g_build_version;
+
 using namespace muduo;
 
 namespace collect
@@ -61,9 +63,9 @@ class CollectLogger : muduo::noncopyable
     file_.flush();
   }
 
-  void roll()
+  bool roll()
   {
-    file_.rollFile();
+    return file_.rollFile();
   }
 
  private:
@@ -85,6 +87,7 @@ class CollectLogger : muduo::noncopyable
   ProcFs proc_;
   Codec codec_;
   muduo::LogFile file_;
+
   muduo::net::Buffer output_;  // for scratch
   SystemInfo info_;  // for scratch
 };
@@ -92,9 +95,15 @@ class CollectLogger : muduo::noncopyable
 class CollectServiceImpl : public CollectService
 {
  public:
-  CollectServiceImpl(CollectLogger* logger)
-    : logger_(logger)
+  CollectServiceImpl(muduo::net::EventLoop* loop, CollectLogger* logger, int argc, char* argv[])
+    : loop_(loop),
+      logger_(logger),
+      allowQuit_(muduo::ProcessInfo::isDebugBuild()),
+      argc_(argc),
+      argv_(argv),
+      executable_(muduo::ProcessInfo::exePath())
   {
+    LOG_INFO << "Executable: " << executable_;
   }
 
   virtual void getSnapshot(const ::collect::SnapshotRequestPtr& request,
@@ -106,26 +115,65 @@ class CollectServiceImpl : public CollectService
     done(&response);
   }
 
-  virtual void flush(const ::rpc2::EmptyPtr& request,
-                     const ::rpc2::Empty* responsePrototype,
-                     const ::muduo::net::RpcDoneCallback& done) // override
+  virtual void flushFile(const ::rpc2::EmptyPtr& request,
+                         const ::rpc2::Empty* responsePrototype,
+                         const ::muduo::net::RpcDoneCallback& done) // override
   {
     logger_->flush();
     ::rpc2::Empty response;
     done(&response);
   }
 
-  virtual void roll(const ::rpc2::EmptyPtr& request,
-                    const ::rpc2::Empty* responsePrototype,
-                    const ::muduo::net::RpcDoneCallback& done) // override
+  virtual void rollFile(const ::rpc2::EmptyPtr& request,
+                        const ::collect::Result* responsePrototype,
+                        const ::muduo::net::RpcDoneCallback& done) // override
   {
-    logger_->roll();
-    ::rpc2::Empty response;
+    Result response;
+    response.set_succeed(logger_->roll());
     done(&response);
   }
 
+  virtual void version(const ::rpc2::EmptyPtr& request,
+                       const ::collect::Result* responsePrototype,
+                       const ::muduo::net::RpcDoneCallback& done) // override
+  {
+    Result response;
+    response.set_succeed(true);
+    response.set_message(g_build_version);
+    done(&response);
+  }
+
+  virtual void quit(const ::rpc2::EmptyPtr& request,
+                    const ::collect::Result* responsePrototype,
+                    const ::muduo::net::RpcDoneCallback& done) // override
+  {
+    Result response;
+    response.set_succeed(allowQuit_);
+    done(&response);
+    if (allowQuit_)
+    {
+      loop_->quit();
+    }
+  }
+
+  virtual void restart(const ::rpc2::EmptyPtr& request,
+                       const ::collect::Result* responsePrototype,
+                       const ::muduo::net::RpcDoneCallback& done) // override
+  {
+    Result response;
+    response.set_succeed(false);
+    done(&response);
+    // FIXME: fork, close listening ports, exec, reopen listening ports if failed
+  }
+
  private:
+  muduo::net::EventLoop* loop_;
   CollectLogger* logger_;
+  const bool allowQuit_;
+  // saved for exec()
+  const int argc_;
+  char** argv_;
+  const muduo::string executable_;
 };
 }
 
@@ -149,11 +197,12 @@ int main(int argc, char* argv[])
   signal(SIGINT, sighandler);
   signal(SIGTERM, sighandler);
   // MallocHook::SetNewHook(&NewHook);
+  LOG_INFO << "Version: " << g_build_version;
 
   collect::CollectLogger logger(&loop, "collector");
   logger.start();
 
-  collect::CollectServiceImpl impl(&logger);
+  collect::CollectServiceImpl impl(&loop, &logger, argc, argv);
   std::unique_ptr<RpcServer> server;
   if (argc > 1)
   {
