@@ -18,6 +18,7 @@ class ProcFs : muduo::noncopyable
  private:
   void fillInitial(SystemInfo* info);
   void fillLoadAvg(SystemInfo* info);
+  void fillMemory(SystemInfo* info);
   void fillStat(SystemInfo* info);
   void fillCpu(SystemInfo_Cpu* cpu, muduo::StringPiece value);
   void fillProcesses(SnapshotRequest_Level, SystemInfo* info);

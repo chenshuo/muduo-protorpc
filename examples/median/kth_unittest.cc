@@ -51,7 +51,7 @@ const int64_t values[] =
     std::numeric_limits<int64_t>::max()
 };
 
-const int n_values = sizeof(values)/sizeof(values[0]);
+const int n_values = static_cast<int>(sizeof(values)/sizeof(values[0]));
 
 BOOST_AUTO_TEST_CASE(testSetLogLevel)
 {

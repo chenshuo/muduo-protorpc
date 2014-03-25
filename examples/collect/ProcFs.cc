@@ -61,6 +61,7 @@ bool ProcFs::fill(SnapshotRequest_Level level, SystemInfo* info)
     fillInitial(info);
   }
   fillLoadAvg(info);
+  fillMemory(info);
   fillStat(info);
   filename_ = "/dev/null";
   file_.closeUnusedFiles(filename_);
@@ -222,6 +223,37 @@ struct LineReader
   StringPiece key;
   StringPiece value;
 };
+
+void ProcFs::fillMemory(SystemInfo* info)
+{
+  filename_ = "/proc/meminfo";
+  if (readFile(filename_, kKeep))
+  {
+    LineReader r(content_);
+    if (r.key == "MemTotal:")
+      info->mutable_memory()->set_total_kb(r.valueAsInt64());
+    r.next();
+    if (r.key == "MemFree:")
+      info->mutable_memory()->set_free_kb(r.valueAsInt64());
+    r.next();
+    if (r.key == "Buffers:")
+      info->mutable_memory()->set_buffers_kb(r.valueAsInt64());
+    r.next();
+    if (r.key == "Cached:")
+      info->mutable_memory()->set_cached_kb(r.valueAsInt64());
+    r.next();
+    if (r.key == "SwapCached:")
+      info->mutable_memory()->set_swap_cached_kb(r.valueAsInt64());
+    r.next();
+    while (r.key != "SwapTotal:")
+      r.next();
+    if (r.key == "SwapTotal:")
+      info->mutable_memory()->set_swap_total_kb(r.valueAsInt64());
+    r.next();
+    if (r.key == "SwapFree:")
+      info->mutable_memory()->set_swap_free_kb(r.valueAsInt64());
+  }
+}
 
 void ProcFs::fillCpu(SystemInfo_Cpu* cpu, StringPiece value)
 {
