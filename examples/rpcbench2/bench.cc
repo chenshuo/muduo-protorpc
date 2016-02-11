@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     int nPipeline = argc > 4 ? atoi(argv[4]) : 1;
 
     EventLoop loop;
-    EventLoopThreadPool pool(&loop);
+    EventLoopThreadPool pool(&loop, "clients");
     pool.setThreadNum(nThreads);
     pool.start(initPerThread);
     InetAddress serverAddr(argv[1], 8888);

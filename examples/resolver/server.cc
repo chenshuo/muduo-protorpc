@@ -46,13 +46,13 @@ class ResolverServiceImpl : public ResolverService
                     const RpcDoneCallback& done)
   {
     LOG_INFO << "ResolverServiceImpl::doneCallback " << host;
-    int32_t ip = address.getSockAddrInet().sin_addr.s_addr;
+    int32_t ip = address.ipNetEndian();
     ResolveResponse response;
     if (ip)
     {
       response.set_resolved(true);
       response.add_ip(ip);
-      response.add_port(address.getSockAddrInet().sin_port);
+      response.add_port(address.portNetEndian());
     }
     else
     {
