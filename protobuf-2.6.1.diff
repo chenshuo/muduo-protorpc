@@ -1,0 +1,174 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d5a7bc9..a804c0d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -23,7 +23,7 @@ set(CXX_FLAGS
+  -Wold-style-cast
+  -Woverloaded-virtual
+  -Wpointer-arith
+- -Wshadow
++ -Wno-error=shadow
+  -Wwrite-strings
+  -march=native
+  # -MMD
+diff --git a/muduo/protorpc2/cpp_message.h b/muduo/protorpc2/cpp_message.h
+index 2f6d219..2fc4ad7 100644
+--- a/muduo/protorpc2/cpp_message.h
++++ b/muduo/protorpc2/cpp_message.h
+@@ -1,6 +1,6 @@
+ // Protocol Buffers - Google's data interchange format
+ // Copyright 2008 Google Inc.  All rights reserved.
+-// http://code.google.com/p/protobuf/
++// https://developers.google.com/protocol-buffers/
+ //
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+@@ -35,10 +35,13 @@
+ #ifndef GOOGLE_PROTOBUF_COMPILER_CPP_MESSAGE_H__
+ #define GOOGLE_PROTOBUF_COMPILER_CPP_MESSAGE_H__
+ 
++#include <memory>
+ #include <string>
++#include <vector>
+ #include <google/protobuf/stubs/common.h>
+ #include <google/protobuf/descriptor.h>
+ //#include <google/protobuf/compiler/cpp/cpp_field.h>
++//#include <google/protobuf/compiler/cpp/cpp_options.h>
+ 
+ namespace google {
+ namespace protobuf {
+@@ -55,10 +58,18 @@ class EnumGenerator;           // enum.h
+ class ExtensionGenerator;      // extension.h
+ class FieldGenerator;          // cpp_field.h
+ 
++// Generator options:
++struct Options {
++  Options() : safe_boundary_check(false) {
++  }
++  string dllexport_decl;
++  bool safe_boundary_check;
++};
++
+ // Convenience class which constructs FieldGenerators for a Descriptor.
+ class FieldGeneratorMap {
+  public:
+-  explicit FieldGeneratorMap(const Descriptor* descriptor);
++  explicit FieldGeneratorMap(const Descriptor* descriptor, const Options& options);
+   ~FieldGeneratorMap();
+ 
+   const FieldGenerator& get(const FieldDescriptor* field) const;
+@@ -67,7 +78,8 @@ class FieldGeneratorMap {
+   const Descriptor* descriptor_;
+   scoped_array<scoped_ptr<FieldGenerator> > field_generators_;
+ 
+-  static FieldGenerator* MakeGenerator(const FieldDescriptor* field);
++  static FieldGenerator* MakeGenerator(const FieldDescriptor* field,
++                                       const Options& options);
+ 
+   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldGeneratorMap);
+ };
+@@ -77,7 +89,7 @@ class MessageGenerator {
+  public:
+   // See generator.cc for the meaning of dllexport_decl.
+   explicit MessageGenerator(const Descriptor* descriptor,
+-                            const string& dllexport_decl);
++                            const Options& options);
+   ~MessageGenerator();
+ 
+   // Header stuff.
+@@ -173,11 +186,13 @@ class MessageGenerator {
+ 
+   const Descriptor* descriptor_;
+   string classname_;
+-  string dllexport_decl_;
++  Options options_;
+   FieldGeneratorMap field_generators_;
++  vector< vector<string> > runs_of_fields_;  // that might be trivially cleared
+   scoped_array<scoped_ptr<MessageGenerator> > nested_generators_;
+   scoped_array<scoped_ptr<EnumGenerator> > enum_generators_;
+   scoped_array<scoped_ptr<ExtensionGenerator> > extension_generators_;
++  bool uses_string_;
+ 
+   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageGenerator);
+ };
+diff --git a/muduo/protorpc2/cpp_service.h b/muduo/protorpc2/cpp_service.h
+index 833bbdb..8dd3c68 100644
+--- a/muduo/protorpc2/cpp_service.h
++++ b/muduo/protorpc2/cpp_service.h
+@@ -38,6 +38,7 @@
+ #include <map>
+ #include <string>
+ #include <google/protobuf/stubs/common.h>
++//#include <google/protobuf/compiler/cpp/cpp_options.h>
+ #include <google/protobuf/descriptor.h>
+ 
+ namespace google {
+@@ -55,7 +56,7 @@ class ServiceGenerator {
+  public:
+   // See generator.cc for the meaning of dllexport_decl.
+   explicit ServiceGenerator(const ServiceDescriptor* descriptor,
+-                            const string& dllexport_decl);
++                            const Options& options);
+   ~ServiceGenerator();
+ 
+   // Header stuff.
+@@ -76,7 +77,6 @@ class ServiceGenerator {
+  private:
+   enum RequestOrResponse { REQUEST, RESPONSE };
+   enum VirtualOrNon { VIRTUAL, NON_VIRTUAL };
+-  enum StubOrNon { STUB, NON_STUB };
+ 
+   // Header stuff.
+ 
+@@ -87,7 +87,7 @@ class ServiceGenerator {
+   void GenerateStubDefinition(io::Printer* printer);
+ 
+   // Prints signatures for all methods in the
+-  void GenerateMethodSignatures(StubOrNon stub_or_non,
++  void GenerateMethodSignatures(VirtualOrNon virtual_or_non,
+                                 io::Printer* printer);
+ 
+   // Source file stuff.
+diff --git a/muduo/protorpc2/gen.cc b/muduo/protorpc2/gen.cc
+index b0bff76..0f29896 100644
+--- a/muduo/protorpc2/gen.cc
++++ b/muduo/protorpc2/gen.cc
+@@ -100,7 +100,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
+     "static const ::google::protobuf::ServiceDescriptor* descriptor();\n"
+     "\n");
+ 
+-  GenerateMethodSignatures(NON_STUB, printer);
++  GenerateMethodSignatures(VIRTUAL, printer);
+ 
+   printer->Print(
+     "\n"
+@@ -144,7 +144,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
+     "// implements $classname$ ------------------------------------------\n"
+     "\n");
+ 
+-  GenerateMethodSignatures(STUB, printer);
++  GenerateMethodSignatures(NON_VIRTUAL, printer);
+ 
+   printer->Outdent();
+   printer->Print(vars_,
+@@ -157,7 +157,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
+ }
+ 
+ void ServiceGenerator::GenerateMethodSignatures(
+-    StubOrNon stub_or_non, io::Printer* printer) {
++    VirtualOrNon virtual_or_non, io::Printer* printer) {
+   if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
+   for (int i = 0; i < descriptor_->method_count(); i++) {
+     const MethodDescriptor* method = descriptor_->method(i);
+@@ -167,9 +167,9 @@ void ServiceGenerator::GenerateMethodSignatures(
+     sub_vars["input_type"] = ClassName(method->input_type(), true);
+     sub_vars["output_type"] = ClassName(method->output_type(), true);
+     sub_vars["output_typedef"] = ClassName(method->output_type(), true);
+-    sub_vars["virtual"] = "virtual ";
++    sub_vars["virtual"] = virtual_or_non == VIRTUAL ? "virtual " : "";
+ 
+-    if (stub_or_non == NON_STUB) {
++    if (virtual_or_non == VIRTUAL) {
+       printer->Print(sub_vars,
+         "$virtual$void $name$(const $input_type$Ptr& request,\n"
+         "                     const $output_type$* responsePrototype,\n"
