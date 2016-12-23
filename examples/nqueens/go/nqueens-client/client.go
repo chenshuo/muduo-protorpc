@@ -65,7 +65,7 @@ func verify(N int, shards []Shard) {
 		results[shard.first_row] = append(x, shard.second_row)
 	}
 
-	log.Print(results)
+	// log.Print(results)
 	// TODO: verify shards
 }
 
@@ -75,6 +75,7 @@ func reducer(N int, shards []Shard) int64 {
 	for _, shard := range shards {
 		results[int(shard.first_row)] += shard.count
 	}
+	log.Print("results = ", results)
 
 	var total int64
 	for i := 0; i < (N+1)/2; i++ {
@@ -102,10 +103,10 @@ func main() {
 	solver := nqueens.NewNQueensServiceClient(conn)
 	log.Print("N = ", N)
 	shards := mapper(solver, N)
-	log.Print(shards)
+	log.Print("shards = ", shards)
 	verify(N, shards)
 	solution := reducer(N, shards)
-	log.Print(solution)
+	log.Print("solution = ", solution)
 
 	solver.Close()
 }
