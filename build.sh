@@ -5,8 +5,8 @@ set -x
 SOURCE_DIR=`pwd`
 BUILD_DIR=${BUILD_DIR:-../build}
 BUILD_TYPE=${BUILD_TYPE:-release}
-INSTALL_DIR=${INSTALL_DIR:-../${BUILD_TYPE}-install}
-MUDUO_DIR=${MUDUO_DIR:-${PWD}/$BUILD_DIR/${BUILD_TYPE}-install}
+INSTALL_DIR=${INSTALL_DIR:-../${BUILD_TYPE}-install-cpp11}
+MUDUO_DIR=${MUDUO_DIR:-${PWD}/$BUILD_DIR/${BUILD_TYPE}-install-cpp11}
 
 mkdir -p $BUILD_DIR/protorpc-$BUILD_TYPE\
   && cd $BUILD_DIR/protorpc-$BUILD_TYPE \
