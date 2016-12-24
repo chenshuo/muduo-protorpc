@@ -31,7 +31,7 @@ static int test_down_pointer_cast()
   return 0;
 }
 
-static int dummy = test_down_pointer_cast();
+static int dummy __attribute__ ((unused)) = test_down_pointer_cast();
 
 RpcChannel::RpcChannel()
   : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
