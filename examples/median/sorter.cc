@@ -10,7 +10,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-bool kDebug = true;
+bool debug = false;
 
 namespace median
 {
@@ -36,6 +36,7 @@ class SorterImpl : public Sorter
     {
       resp.set_min(data_[0]);
       resp.set_max(data_.back());
+      resp.set_sum(std::accumulate(data_.begin(), data_.end(), 0LL));
     }
     done(&resp);
   }
@@ -71,7 +72,7 @@ class SorterImpl : public Sorter
       data_.push_back(value);
     }
     std::sort(data_.begin(), data_.end());
-    if (kDebug)
+    if (debug)
     {
       std::copy(data_.begin(), data_.end(), std::ostream_iterator<int64_t>(std::cout, " "));
       std::cout << std::endl;
@@ -90,6 +91,7 @@ int main(int argc, char* argv[])
 {
   EventLoop loop;
   int port = argc > 1 ? atoi(argv[1]) : 5555;
+  debug = argc > 2;
   InetAddress listenAddr(static_cast<uint16_t>(port));
   median::SorterImpl impl;
   RpcServer server(&loop, listenAddr);

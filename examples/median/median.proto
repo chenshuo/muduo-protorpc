@@ -10,6 +10,7 @@ message QueryResponse {
   required int64 count = 1;
   optional int64 min = 2;
   optional int64 max = 3;
+  optional int64 sum = 4;  // should be int128
 }
 
 message SearchRequest {

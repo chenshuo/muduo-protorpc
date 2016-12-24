@@ -17,6 +17,7 @@ struct BackTracking
 
   const int N;
   int64_t count;
+  // bitmasks, 1 means occupied, all 0s initially
   uint32_t columns[kMaxQueens];
   uint32_t diagnoal[kMaxQueens];
   uint32_t antidiagnoal[kMaxQueens];
@@ -43,14 +44,14 @@ struct BackTracking
       if (row == N - 1) {
         ++count;
       } else {
-        const uint32_t m = 1 << i;
-        columns[row+1] = columns[row] | m;
-        diagnoal[row+1] = (diagnoal[row] | m) >> 1;
-        antidiagnoal[row+1] = (antidiagnoal[row] | m) << 1;
+        const uint32_t mask = 1 << i;
+        columns[row+1] = columns[row] | mask;
+        diagnoal[row+1] = (diagnoal[row] | mask) >> 1;
+        antidiagnoal[row+1] = (antidiagnoal[row] | mask) << 1;
         search(row+1);
       }
 
-      avail &= avail-1;
+      avail &= avail-1;  // turn off last bit
     }
   }
 };
