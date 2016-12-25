@@ -9,7 +9,7 @@
 // array: [-1, 0, 1, 2, 3, 8 ]
 // K-th : [ 1, 2, 3, 4, 5, 6 ]
 inline
-std::pair<int64_t, bool> getKth(const std::function<void(int64_t, int64_t*, int64_t*)>& search,
+std::pair<int64_t, bool> getKth(std::function<void(int64_t, int64_t*, int64_t*)> search,
                                 const int64_t k,
                                 const int64_t count, int64_t min, int64_t max)
 {

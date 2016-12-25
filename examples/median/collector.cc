@@ -15,10 +15,12 @@
 using namespace muduo;
 using namespace muduo::net;
 
+namespace median
+{
+
 class RpcClient : noncopyable
 {
  public:
-  typedef std::function<void(int64_t, int64_t, int64_t)> QueryCallback;
   typedef std::function<void(int64_t, int64_t)> SearchCallback;
 
   RpcClient(EventLoop* loop, const InetAddress& serverAddr)
@@ -41,25 +43,13 @@ class RpcClient : noncopyable
     client_.connect();
   }
 
-  void query(const QueryCallback& cb)
-  {
-    ::rpc2::Empty req;
-    stub_.Query(req, std::bind(&RpcClient::queryCb, this, _1, cb)); // need C++11 lambda
-  }
-
-  void search(int64_t guess, const SearchCallback& cb)
-  {
-    median::SearchRequest req;
-    req.set_guess(guess);
-    stub_.Search(req, std::bind(&RpcClient::searchCb, this, _1, cb)); // need C++11 lambda
-  }
+  Sorter::Stub* stub() { return &stub_; } 
 
  private:
   void onConnection(const TcpConnectionPtr& conn)
   {
     if (conn->connected())
     {
-      //channel_.reset(new RpcChannel(conn));
       channel_->setConnection(conn);
       if (connectLatch_)
       {
@@ -69,23 +59,11 @@ class RpcClient : noncopyable
     }
   }
 
-  void queryCb(const median::QueryResponsePtr& resp, const QueryCallback& cb)
-  {
-    LOG_DEBUG << resp->DebugString();
-    cb(resp->count(), resp->min(), resp->max());
-  }
-
-  void searchCb(const median::SearchResponsePtr& resp, const SearchCallback& cb)
-  {
-    LOG_DEBUG << resp->DebugString();
-    cb(resp->smaller(), resp->same());
-  }
-
   EventLoop* loop_;
   CountDownLatch* connectLatch_;
   TcpClient client_;
   RpcChannelPtr channel_;
-  median::Sorter::Stub stub_;
+  Sorter::Stub stub_;
 };
 
 class Merger : noncopyable
@@ -94,9 +72,9 @@ class Merger : noncopyable
   Merger(EventLoop* loop, const std::vector<InetAddress>& addresses)
     : loop_(loop)
   {
-    for (size_t i = 0; i < addresses.size(); ++i)
+    for (const auto& addr : addresses)
     {
-      sorters_.push_back(new RpcClient(loop, addresses[i]));
+      sorters_.push_back(new RpcClient(loop, addr));
     }
   }
 
@@ -111,13 +89,63 @@ class Merger : noncopyable
     latch.wait();
   }
 
-  void getCount(int64_t* count, int64_t* min, int64_t* max)
+  void run()
+  {
+    QueryResponse stats;
+    stats.set_min(std::numeric_limits<int64_t>::max());
+    stats.set_max(std::numeric_limits<int64_t>::min());
+    getStats(&stats);
+    LOG_INFO << "stats:\n" << stats.DebugString();
+
+    const int64_t count = stats.count();;
+    if (count > 0)
+    {
+      LOG_INFO << "mean: " << static_cast<double>(stats.sum()) / static_cast<double>(count);
+    }
+
+    if (count <= 0)
+    {
+      LOG_INFO << "***** No median";
+    }
+    else
+    {
+      const int64_t k = (count+1)/2;
+      std::pair<int64_t, bool> median = getKth(
+          std::bind(&Merger::search, this, _1, _2, _3),
+          k, count, stats.min(), stats.max());
+      if (median.second)
+      {
+        LOG_INFO << "***** Median is " << median.first;
+      }
+      else
+      {
+        LOG_ERROR << "***** Median not found";
+      }
+    }
+  }
+
+ private:
+  void getStats(QueryResponse* result)
   {
     assert(!loop_->isInLoopThread());
     CountDownLatch latch(static_cast<int>(sorters_.size()));
     for (RpcClient& sorter : sorters_)
     {
-      sorter.query(std::bind(&Merger::queryCb, this, &latch, count, min, max, _1, _2, _3)); // need C++11 lambda
+      ::rpc2::Empty req;
+      sorter.stub()->Query(req, [result, &latch](const QueryResponsePtr& resp)
+        {
+          assert(loop_->isInLoopThread());
+          result->set_count(result->count() + resp->count());
+          result->set_sum(result->sum() + resp->sum());
+          if (resp->count() > 0)
+          {
+            if (resp->min() < result->min())
+              result->set_min(resp->min());
+            if (resp->max() > result->max())
+              result->set_max(resp->max());
+          }
+          latch.countDown();
+        });
     }
     latch.wait();
   }
@@ -130,42 +158,25 @@ class Merger : noncopyable
     CountDownLatch latch(static_cast<int>(sorters_.size()));
     for (RpcClient& sorter : sorters_)
     {
-      sorter.search(guess, std::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2)); // need C++11 lambda
+      // sorter.search(guess, std::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2)); // need C++11 lambda
+      SearchRequest req;
+      req.set_guess(guess);
+      sorter.stub()->Search(req, [smaller, same, &latch](const SearchResponsePtr& resp)
+        {
+          assert(loop_->isInLoopThread());
+          *smaller += resp->smaller();
+          *same += resp->same();
+          latch.countDown();
+        });
     }
     latch.wait();
-  }
-
- private:
-
-  void queryCb(CountDownLatch* latch,
-               int64_t* count, int64_t* min, int64_t* max,
-               int64_t thiscount, int64_t thismin, int64_t thismax)
-  {
-    assert(loop_->isInLoopThread());
-    *count += thiscount;
-    if (thiscount > 0)
-    {
-      if (thismin < *min)
-        *min = thismin;
-      if (thismax > *max)
-        *max = thismax;
-    }
-    latch->countDown();
-  }
-
-  void searchCb(CountDownLatch* latch,
-                int64_t* smaller, int64_t* same,
-                int64_t thissmaller, int64_t thissame)
-  {
-    assert(loop_->isInLoopThread());
-    *smaller += thissmaller;
-    *same += thissame;
-    latch->countDown();
   }
 
   EventLoop* loop_;
   boost::ptr_vector<RpcClient> sorters_;
 };
+
+}  // namespace median
 
 std::vector<InetAddress> getAddresses(int argc, char* argv[])
 {
@@ -188,47 +199,16 @@ std::vector<InetAddress> getAddresses(int argc, char* argv[])
   return result;
 }
 
-void run(Merger* merger)
-{
-  int64_t count = 0;
-  int64_t min = std::numeric_limits<int64_t>::max();
-  int64_t max = std::numeric_limits<int64_t>::min();
-
-  merger->getCount(&count, &min, &max);
-  LOG_INFO << "count = " << count
-           << ", min = " << min
-           << ", max = " << max;
-
-  if (count <= 0)
-  {
-    LOG_INFO << "***** No median";
-  }
-  else
-  {
-    std::pair<int64_t, bool> median = getKth(
-        std::bind(&Merger::search, merger, _1, _2, _3),
-        (count+1)/2, count, min, max);
-    if (median.second)
-    {
-      LOG_INFO << "***** Median is " << median.first;
-    }
-    else
-    {
-      LOG_ERROR << "***** Median not found";
-    }
-  }
-}
-
 int main(int argc, char* argv[])
 {
   if (argc > 1)
   {
     LOG_INFO << "Starting";
     EventLoopThread loop;
-    Merger merger(loop.startLoop(), getAddresses(argc, argv));
+    median::Merger merger(loop.startLoop(), getAddresses(argc, argv));
     merger.connect();
     LOG_INFO << "All connected";
-    run(&merger);
+    merger.run();
   }
   else
   {

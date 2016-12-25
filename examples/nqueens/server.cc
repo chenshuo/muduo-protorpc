@@ -95,9 +95,9 @@ class NQueensServiceImpl : public NQueensService
     pool_.start(threads);
   }
 
-  virtual void Solve(const ::nqueens::SubProblemRequestPtr& request,
-                     const ::nqueens::SubProblemResponse* responsePrototype,
-                     const RpcDoneCallback& done)
+  void Solve(const ::nqueens::SubProblemRequestPtr& request,
+             const ::nqueens::SubProblemResponse* responsePrototype,
+             const RpcDoneCallback& done) override
   {
     LOG_INFO << "NQueensServiceImpl::Solve " << request->ShortDebugString();
     pool_.run(std::bind(&NQueensServiceImpl::doSolve, request, done));

@@ -23,11 +23,12 @@ class SorterImpl : public Sorter
     xsubi_[0] = static_cast<uint16_t>(getpid());
     xsubi_[1] = static_cast<uint16_t>(gethostid());
     xsubi_[2] = static_cast<uint16_t>(Timestamp::now().microSecondsSinceEpoch());
+    doGenerate(100, 0, 30);
   }
 
-  virtual void Query(const ::rpc2::EmptyPtr& request,
-                     const QueryResponse* responsePrototype,
-                     const RpcDoneCallback& done)
+  void Query(const ::rpc2::EmptyPtr& request,
+             const QueryResponse* responsePrototype,
+             const RpcDoneCallback& done) override
   {
     LOG_INFO << "Query";
     QueryResponse resp;
@@ -41,9 +42,9 @@ class SorterImpl : public Sorter
     done(&resp);
   }
 
-  virtual void Search(const SearchRequestPtr& request,
-                      const SearchResponse* responsePrototype,
-                      const RpcDoneCallback& done)
+  void Search(const SearchRequestPtr& request,
+              const SearchResponse* responsePrototype,
+              const RpcDoneCallback& done) override
   {
     int64_t guess = request->guess();
     LOG_INFO << "Search " << guess;
@@ -55,16 +56,23 @@ class SorterImpl : public Sorter
     done(&resp);
   }
 
-  virtual void Generate(const GenerateRequestPtr& request,
-                        const ::rpc2::Empty* responsePrototype,
-                        const RpcDoneCallback& done)
+  void Generate(const GenerateRequestPtr& request,
+                const ::rpc2::Empty* responsePrototype,
+                const RpcDoneCallback& done) override
   {
     LOG_INFO << "Generate ";
+    doGenerate(request->count(), request->min(), request->max());
+
+    done(responsePrototype);
+  }
+
+  void doGenerate(int64_t count, int64_t min, int64_t max)
+  {
     data_.clear();
-    for (int64_t i = 0; i < request->count(); ++i)
+    for (int64_t i = 0; i < count; ++i)
     {
-      int64_t range = request->max() - request->min();
-      int64_t value = request->min();
+      int64_t range = max - min;
+      int64_t value = min;
       if (range > 1)
       {
         value += nrand48(xsubi_) % range;
@@ -77,7 +85,6 @@ class SorterImpl : public Sorter
       std::copy(data_.begin(), data_.end(), std::ostream_iterator<int64_t>(std::cout, " "));
       std::cout << std::endl;
     }
-    done(responsePrototype);
   }
 
  private:
