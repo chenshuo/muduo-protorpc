@@ -37,7 +37,7 @@ public class RpcTest {
         RpcEncoder encoder = new RpcEncoder();
         EchoRequest request = EchoRequest.newBuilder().setPayload("Hello").build();
         RpcMessage message = RpcMessage.newBuilder().setType(MessageType.REQUEST).setId(1)
-                .setService(EchoService.getDescriptor().getName())
+                .setService(EchoService.getDescriptor().getFullName())
                 .setMethod(EchoService.getDescriptor().getMethods().get(0).getName())
                 .setRequest(request.toByteString()).build();
         encoder.encode(null, null, message);
@@ -48,7 +48,7 @@ public class RpcTest {
         RpcEncoder encoder = new RpcEncoder();
         SudokuRequest request = SudokuRequest.newBuilder().setCheckerboard("001010").build();
         RpcMessage message = RpcMessage.newBuilder().setType(MessageType.REQUEST).setId(1)
-                .setService(SudokuService.getDescriptor().getName())
+                .setService(SudokuService.getDescriptor().getFullName())
                 .setMethod(SudokuService.getDescriptor().getMethods().get(0).getName())
                 .setRequest(request.toByteString()).build();
         ChannelBuffer buffer = (ChannelBuffer) encoder.encode(null, null, message);
@@ -91,7 +91,7 @@ public class RpcTest {
         RpcMessage message = (RpcMessage) mockChannel.message;
         assertEquals(1, message.getId());
         assertEquals(MessageType.REQUEST, message.getType());
-        assertEquals(remoteService.getDescriptorForType().getName(), message.getService());
+        assertEquals(remoteService.getDescriptorForType().getFullName(), message.getService());
         assertEquals("Solve", message.getMethod());
 
         SudokuResponse sudokuResponse = SudokuResponse.newBuilder()
@@ -128,7 +128,7 @@ public class RpcTest {
                 done.run(sudokuResponse);
             }
         };
-        services.put(SudokuService.getDescriptor().getName(),
+        services.put(SudokuService.getDescriptor().getFullName(),
                 SudokuService.newReflectiveService(mockImpl));
         RpcChannel channel = new RpcChannel(mockChannel);
         channel.setServiceMap(services);
@@ -137,7 +137,7 @@ public class RpcTest {
         RpcMessage request = RpcMessage.newBuilder()
                 .setType(MessageType.REQUEST)
                 .setId(2)
-                .setService(SudokuService.getDescriptor().getName())
+                .setService(SudokuService.getDescriptor().getFullName())
                 .setMethod("Solve")
                 .setRequest(sudokuRequest.toByteString())
                 .build();

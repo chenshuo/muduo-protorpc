@@ -14,7 +14,7 @@ public abstract class RpcPeer {
     protected Map<String, Service> services = new ConcurrentHashMap<String, Service>();
 
     public void registerService(Service service) {
-        services.put(service.getDescriptorForType().getName(), service);
+        services.put(service.getDescriptorForType().getFullName(), service);
     }
 
     public void setNewChannelCallback(NewChannelCallback newChannelCallback) {
