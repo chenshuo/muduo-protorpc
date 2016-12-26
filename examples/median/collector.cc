@@ -130,7 +130,7 @@ class Collector : noncopyable
     for (RpcClient& sorter : sorters_)
     {
       ::rpc2::Empty req;
-      sorter.stub()->Query(req, [result, &latch](const QueryResponsePtr& resp)
+      sorter.stub()->Query(req, [this, result, &latch](const QueryResponsePtr& resp)
         {
           assert(loop_->isInLoopThread());
           result->set_count(result->count() + resp->count());  // result->count += resp->count
@@ -158,7 +158,7 @@ class Collector : noncopyable
     {
       SearchRequest req;
       req.set_guess(guess);
-      sorter.stub()->Search(req, [smaller, same, &latch](const SearchResponsePtr& resp)
+      sorter.stub()->Search(req, [this, smaller, same, &latch](const SearchResponsePtr& resp)
         {
           assert(loop_->isInLoopThread());
           *smaller += resp->smaller();

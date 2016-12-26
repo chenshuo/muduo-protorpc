@@ -45,7 +45,7 @@
 #include <stdio.h>
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
-static_assert(false, "Compile with C++98/03 only.")
+static_assert(false, "Compile with C++98/03 only.");
 #endif
 
 const bool kTrace = false;
