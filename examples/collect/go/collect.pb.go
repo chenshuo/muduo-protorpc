@@ -21,11 +21,12 @@ import proto "code.google.com/p/goprotobuf/proto"
 import json "encoding/json"
 import math "math"
 
+// discarding unused import rpc2 "muduo/protorpc2/rpc2.pb"
+
 // RPC Imports
 import "io"
 import "net/rpc"
 import "github.com/chenshuo/muduo-protorpc/go/muduorpc"
-import "github.com/chenshuo/muduo-protorpc/go/muduorpc/rpc2"
 
 // Reference proto, json, and math imports to suppress error if they are not otherwise used.
 var _ = proto.Marshal
@@ -317,9 +318,10 @@ type SystemInfo struct {
 	AllCpu           *SystemInfo_Cpu         `protobuf:"bytes,3,opt,name=all_cpu" json:"all_cpu,omitempty"`
 	Cpus             []*SystemInfo_Cpu       `protobuf:"bytes,4,rep,name=cpus" json:"cpus,omitempty"`
 	MuduoTimestamp   *uint64                 `protobuf:"fixed64,5,opt,name=muduo_timestamp" json:"muduo_timestamp,omitempty"`
+	Memory           *SystemInfo_Memory      `protobuf:"bytes,8,opt,name=memory" json:"memory,omitempty"`
+	Processes        []*ProcessInfo          `protobuf:"bytes,14,rep,name=processes" json:"processes,omitempty"`
 	UserCpuMs        *int64                  `protobuf:"varint,6,opt,name=user_cpu_ms" json:"user_cpu_ms,omitempty"`
 	SysCpuMs         *int64                  `protobuf:"varint,7,opt,name=sys_cpu_ms" json:"sys_cpu_ms,omitempty"`
-	Processes        []*ProcessInfo          `protobuf:"bytes,14,rep,name=processes" json:"processes,omitempty"`
 	XXX_unrecognized []byte                  `json:"-"`
 }
 
@@ -362,6 +364,20 @@ func (m *SystemInfo) GetMuduoTimestamp() uint64 {
 	return 0
 }
 
+func (m *SystemInfo) GetMemory() *SystemInfo_Memory {
+	if m != nil {
+		return m.Memory
+	}
+	return nil
+}
+
+func (m *SystemInfo) GetProcesses() []*ProcessInfo {
+	if m != nil {
+		return m.Processes
+	}
+	return nil
+}
+
 func (m *SystemInfo) GetUserCpuMs() int64 {
 	if m != nil && m.UserCpuMs != nil {
 		return *m.UserCpuMs
@@ -374,13 +390,6 @@ func (m *SystemInfo) GetSysCpuMs() int64 {
 		return *m.SysCpuMs
 	}
 	return 0
-}
-
-func (m *SystemInfo) GetProcesses() []*ProcessInfo {
-	if m != nil {
-		return m.Processes
-	}
-	return nil
 }
 
 type SystemInfo_Basic struct {
@@ -575,6 +584,70 @@ func (m *SystemInfo_Cpu) GetSoftirqMs() int64 {
 	return 0
 }
 
+type SystemInfo_Memory struct {
+	TotalKb          *int64 `protobuf:"varint,1,opt,name=total_kb" json:"total_kb,omitempty"`
+	FreeKb           *int64 `protobuf:"varint,2,opt,name=free_kb" json:"free_kb,omitempty"`
+	BuffersKb        *int64 `protobuf:"varint,3,opt,name=buffers_kb" json:"buffers_kb,omitempty"`
+	CachedKb         *int64 `protobuf:"varint,4,opt,name=cached_kb" json:"cached_kb,omitempty"`
+	SwapTotalKb      *int64 `protobuf:"varint,5,opt,name=swap_total_kb" json:"swap_total_kb,omitempty"`
+	SwapFreeKb       *int64 `protobuf:"varint,6,opt,name=swap_free_kb" json:"swap_free_kb,omitempty"`
+	SwapCachedKb     *int64 `protobuf:"varint,7,opt,name=swap_cached_kb" json:"swap_cached_kb,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *SystemInfo_Memory) Reset()         { *m = SystemInfo_Memory{} }
+func (m *SystemInfo_Memory) String() string { return proto.CompactTextString(m) }
+func (*SystemInfo_Memory) ProtoMessage()    {}
+
+func (m *SystemInfo_Memory) GetTotalKb() int64 {
+	if m != nil && m.TotalKb != nil {
+		return *m.TotalKb
+	}
+	return 0
+}
+
+func (m *SystemInfo_Memory) GetFreeKb() int64 {
+	if m != nil && m.FreeKb != nil {
+		return *m.FreeKb
+	}
+	return 0
+}
+
+func (m *SystemInfo_Memory) GetBuffersKb() int64 {
+	if m != nil && m.BuffersKb != nil {
+		return *m.BuffersKb
+	}
+	return 0
+}
+
+func (m *SystemInfo_Memory) GetCachedKb() int64 {
+	if m != nil && m.CachedKb != nil {
+		return *m.CachedKb
+	}
+	return 0
+}
+
+func (m *SystemInfo_Memory) GetSwapTotalKb() int64 {
+	if m != nil && m.SwapTotalKb != nil {
+		return *m.SwapTotalKb
+	}
+	return 0
+}
+
+func (m *SystemInfo_Memory) GetSwapFreeKb() int64 {
+	if m != nil && m.SwapFreeKb != nil {
+		return *m.SwapFreeKb
+	}
+	return 0
+}
+
+func (m *SystemInfo_Memory) GetSwapCachedKb() int64 {
+	if m != nil && m.SwapCachedKb != nil {
+		return *m.SwapCachedKb
+	}
+	return 0
+}
+
 type SnapshotRequest struct {
 	Level            *SnapshotRequest_Level `protobuf:"varint,1,opt,name=level,enum=collect.SnapshotRequest_Level,def=0" json:"level,omitempty"`
 	XXX_unrecognized []byte                 `json:"-"`
@@ -633,7 +706,7 @@ type CollectService interface {
 }
 
 func RegisterCollectService(service CollectService) {
-	rpc.RegisterName("CollectService", service)
+	rpc.RegisterName("collect.CollectService", service)
 }
 
 func NewCollectServiceClient(conn io.ReadWriteCloser) *CollectServiceClient {
@@ -651,25 +724,25 @@ func (c *CollectServiceClient) Close() error {
 }
 
 func (c *CollectServiceClient) GetSnapshot(req *SnapshotRequest, resp *SystemInfo) error {
-	return c.client.Call("CollectService.getSnapshot", req, resp)
+	return c.client.Call("collect.CollectService.getSnapshot", req, resp)
 }
 
 func (c *CollectServiceClient) FlushFile(req *rpc2.Empty, resp *rpc2.Empty) error {
-	return c.client.Call("CollectService.flushFile", req, resp)
+	return c.client.Call("collect.CollectService.flushFile", req, resp)
 }
 
 func (c *CollectServiceClient) RollFile(req *rpc2.Empty, resp *Result) error {
-	return c.client.Call("CollectService.rollFile", req, resp)
+	return c.client.Call("collect.CollectService.rollFile", req, resp)
 }
 
 func (c *CollectServiceClient) Version(req *rpc2.Empty, resp *Result) error {
-	return c.client.Call("CollectService.version", req, resp)
+	return c.client.Call("collect.CollectService.version", req, resp)
 }
 
 func (c *CollectServiceClient) Quit(req *rpc2.Empty, resp *Result) error {
-	return c.client.Call("CollectService.quit", req, resp)
+	return c.client.Call("collect.CollectService.quit", req, resp)
 }
 
 func (c *CollectServiceClient) Restart(req *rpc2.Empty, resp *Result) error {
-	return c.client.Call("CollectService.restart", req, resp)
+	return c.client.Call("collect.CollectService.restart", req, resp)
 }
