@@ -21,8 +21,6 @@ namespace median
 class RpcClient : noncopyable
 {
  public:
-  typedef std::function<void(int64_t, int64_t)> SearchCallback;
-
   RpcClient(EventLoop* loop, const InetAddress& serverAddr)
     : loop_(loop),
       connectLatch_(NULL),
@@ -66,10 +64,10 @@ class RpcClient : noncopyable
   Sorter::Stub stub_;
 };
 
-class Merger : noncopyable
+class Collector : noncopyable
 {
  public:
-  Merger(EventLoop* loop, const std::vector<InetAddress>& addresses)
+  Collector(EventLoop* loop, const std::vector<InetAddress>& addresses)
     : loop_(loop)
   {
     for (const auto& addr : addresses)
@@ -97,7 +95,7 @@ class Merger : noncopyable
     getStats(&stats);
     LOG_INFO << "stats:\n" << stats.DebugString();
 
-    const int64_t count = stats.count();;
+    const int64_t count = stats.count();
     if (count > 0)
     {
       LOG_INFO << "mean: " << static_cast<double>(stats.sum()) / static_cast<double>(count);
@@ -111,7 +109,7 @@ class Merger : noncopyable
     {
       const int64_t k = (count+1)/2;
       std::pair<int64_t, bool> median = getKth(
-          std::bind(&Merger::search, this, _1, _2, _3),
+          std::bind(&Collector::search, this, _1, _2, _3),
           k, count, stats.min(), stats.max());
       if (median.second)
       {
@@ -135,8 +133,8 @@ class Merger : noncopyable
       sorter.stub()->Query(req, [result, &latch](const QueryResponsePtr& resp)
         {
           assert(loop_->isInLoopThread());
-          result->set_count(result->count() + resp->count());
-          result->set_sum(result->sum() + resp->sum());
+          result->set_count(result->count() + resp->count());  // result->count += resp->count
+          result->set_sum(result->sum() + resp->sum());  // result->sum += resp->sum
           if (resp->count() > 0)
           {
             if (resp->min() < result->min())
@@ -158,7 +156,6 @@ class Merger : noncopyable
     CountDownLatch latch(static_cast<int>(sorters_.size()));
     for (RpcClient& sorter : sorters_)
     {
-      // sorter.search(guess, std::bind(&Merger::searchCb, this, &latch, smaller, same, _1, _2)); // need C++11 lambda
       SearchRequest req;
       req.set_guess(guess);
       sorter.stub()->Search(req, [smaller, same, &latch](const SearchResponsePtr& resp)
@@ -205,10 +202,10 @@ int main(int argc, char* argv[])
   {
     LOG_INFO << "Starting";
     EventLoopThread loop;
-    median::Merger merger(loop.startLoop(), getAddresses(argc, argv));
-    merger.connect();
+    median::Collector collector(loop.startLoop(), getAddresses(argc, argv));
+    collector.connect();
     LOG_INFO << "All connected";
-    merger.run();
+    collector.run();
   }
   else
   {
