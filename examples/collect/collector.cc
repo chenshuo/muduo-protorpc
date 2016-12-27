@@ -8,7 +8,7 @@
 #include <muduo/net/EventLoopThread.h>
 #include <muduo/net/protobuf/ProtobufCodecLite.h>
 #include <muduo/protorpc2/RpcServer.h>
-#include <google/malloc_hook.h>
+// #include <google/malloc_hook.h>
 
 #include <signal.h>
 
