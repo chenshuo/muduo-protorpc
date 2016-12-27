@@ -2,6 +2,7 @@
 #define MUDUO_PROTORPC2_EXAMPLES_WORDFREQ_PARTITION_H
 
 #include <algorithm>
+#include <functional>
 #include <numeric>
 #include <vector>
 #include <muduo/base/Types.h>
