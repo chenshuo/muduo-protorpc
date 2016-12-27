@@ -33,7 +33,7 @@ void run(int N, NQueensService::Stub* stub, EventLoop* loop)
         if (g_got == (N+1)/2)
         {
           LOG_INFO << "total: " << g_total;
-          loop->quit();
+          // TODO: disconnect
         }
       });
   }
@@ -65,6 +65,7 @@ int main(int argc, char* argv[])
         else
         {
           channel.setConnection(TcpConnectionPtr());
+          loop.quit();
         }
       });
 

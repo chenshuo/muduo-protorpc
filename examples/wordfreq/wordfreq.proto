@@ -1,6 +1,6 @@
 package wordfreq;
 
-option cc_generic_services = true;
+// option cc_generic_services = true;
 option java_generic_services = true;
 option py_generic_services = true;
 

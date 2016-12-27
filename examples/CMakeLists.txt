@@ -13,11 +13,7 @@ function(PROTOBUF_GENERATE_RPC SRCS)
     add_custom_command(
       OUTPUT "${FIL_WE}.pb.cc" "${FIL_WE}.pb.h"
       COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
-      ARGS --plugin=${PROJECT_BINARY_DIR}/bin/protoc-gen-rpc --rpc_out . ${CMAKE_CURRENT_SOURCE_DIR}/${FIL} -I${CMAKE_CURRENT_SOURCE_DIR} -I${PROJECT_SOURCE_DIR} -I${PROTOBUF_INCLUDE_DIR}
-      COMMAND sed
-      ARGS -i "s/#include <google\\/protobuf\\/service.h>/#include <muduo\\/protorpc2\\/service.h>/" ${FIL_WE}.pb.h
-      COMMAND sed
-      ARGS -i  "/protoc_insertion_point.includes./i#include <memory>" ${FIL_WE}.pb.h
+      ARGS --plugin=${PROJECT_BINARY_DIR}/bin/protoc-gen-rpc --cpp_out . --rpc_out . ${CMAKE_CURRENT_SOURCE_DIR}/${FIL} -I${CMAKE_CURRENT_SOURCE_DIR} -I${PROJECT_SOURCE_DIR} -I${PROTOBUF_INCLUDE_DIR}
       MAIN_DEPENDENCY ${FIL}
       DEPENDS protoc-gen-rpc
       VERBATIM )

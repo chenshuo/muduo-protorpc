@@ -1,6 +1,6 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// http://code.google.com/p/protobuf/
+// https://developers.google.com/protocol-buffers/
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -32,8 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-#ifndef GOOGLE_PROTOBUF_COMPILER_CPP_SERVICE_H__
-#define GOOGLE_PROTOBUF_COMPILER_CPP_SERVICE_H__
+#ifndef MUDUO_PROTORPC2_CPP_SERVICE_H
+#define MUDUO_PROTORPC2_CPP_SERVICE_H
 
 #include <map>
 #include <string>
@@ -50,12 +50,14 @@ namespace protobuf {
 namespace protobuf {
 namespace compiler {
 namespace cpp {
+namespace muduorpc {
 
 class ServiceGenerator {
  public:
   // See generator.cc for the meaning of dllexport_decl.
   explicit ServiceGenerator(const ServiceDescriptor* descriptor,
-                            const string& dllexport_decl);
+                            const string& filename,
+                            int index);
   ~ServiceGenerator();
 
   // Header stuff.
@@ -111,9 +113,10 @@ class ServiceGenerator {
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ServiceGenerator);
 };
 
+}  // namespace muduorpc
 }  // namespace cpp
 }  // namespace compiler
 }  // namespace protobuf
 
 }  // namespace google
-#endif  // GOOGLE_PROTOBUF_COMPILER_CPP_SERVICE_H__
+#endif  // MUDUO_PROTORPC2_CPP_SERVICE_H

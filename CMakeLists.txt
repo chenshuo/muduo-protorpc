@@ -23,7 +23,7 @@ set(CXX_FLAGS
  -Wold-style-cast
  -Woverloaded-virtual
  -Wpointer-arith
- -Wshadow
+ -Wno-error=shadow
  -Wwrite-strings
  -march=native
  # -MMD

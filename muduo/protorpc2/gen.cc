@@ -1,9 +1,9 @@
-// code based on google/protobuf/compiler/cpp/cpp_service.cc
+// code based on google/protobuf/compiler/cpp/cpp_file.cc
 // Integrated with muduo by Shuo Chen.
 
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// http://code.google.com/p/protobuf/
+// https://developers.google.com/protocol-buffers/
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,339 +35,122 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-#include <google/protobuf/compiler/cpp/cpp_generator.h>
+#include <memory>
+#include <string>
+
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/compiler/plugin.h>
 #include <google/protobuf/io/printer.h>
+#include <google/protobuf/io/zero_copy_stream.h>
 
-#include <muduo/protorpc2/cpp_message.h>
 #include <muduo/protorpc2/cpp_service.h>
 
 #include <stdio.h>
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-static_assert(false, "Compile with C++98/03 only.");
-#endif
-
-const bool kTrace = false;
-
 namespace google {
 namespace protobuf {
-
-string SimpleItoa(int i);
 
 namespace compiler {
 namespace cpp {
 
+// cpp_helpers.h
 string ClassName(const Descriptor* descriptor, bool qualified);
+string StripProto(const string& filename);
+extern const char kThickSeparator[];
+extern const char kThinSeparator[];
 
-void MessageGenerator::GenerateForwardDeclaration(io::Printer* printer) {
-  printer->Print("class $classname$;\n"
-                 "typedef ::std::shared_ptr<$classname$> $classname$Ptr;\n",
-                 "classname", classname_);
+namespace muduorpc {
 
-  for (int i = 0; i < descriptor_->nested_type_count(); i++) {
-    nested_generators_[i]->GenerateForwardDeclaration(printer);
-  }
-}
+class RpcGenerator : public CodeGenerator
+{
+ public:
+  RpcGenerator() = default;
 
-void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  // Forward-declare the stub type.
-  printer->Print(vars_,
-    "class $classname$_Stub;\n"
-    "\n");
+  // implements CodeGenerator ----------------------------------------
+  bool Generate(const FileDescriptor* file,
+                const string& parameter,
+                GeneratorContext* generator_context,
+                string* error) const override
+  {
+    if (file->service_count() == 0)
+      return true;
 
-  GenerateInterface(printer);
-  GenerateStubDefinition(printer);
-}
+    string basename = StripProto(file->name()) + ".pb";
 
-void ServiceGenerator::GenerateInterface(io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  printer->Print(vars_,
-    "\n"
-    "class $dllexport$$classname$ : public ::muduo::net::Service {\n"
-    " protected:\n"
-    "  // This class should be treated as an abstract interface.\n"
-    "  inline $classname$() {};\n"
-    " public:\n"
-    "  virtual ~$classname$();\n");
-  printer->Indent();
-
-  printer->Print(vars_,
-    "\n"
-    "typedef $classname$_Stub Stub;\n"
-    "\n"
-    "static const ::google::protobuf::ServiceDescriptor* descriptor();\n"
-    "\n");
-
-  GenerateMethodSignatures(NON_STUB, printer);
-
-  printer->Print(
-    "\n"
-    "// implements Service ----------------------------------------------\n"
-    "\n"
-    "const ::google::protobuf::ServiceDescriptor* GetDescriptor();\n"
-    "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                const ::google::protobuf::MessagePtr& request,\n"
-    "                const ::google::protobuf::Message* responsePrototype,\n"
-    "                const ::muduo::net::RpcDoneCallback& done);\n"
-    "const ::google::protobuf::Message& GetRequestPrototype(\n"
-    "  const ::google::protobuf::MethodDescriptor* method) const;\n"
-    "const ::google::protobuf::Message& GetResponsePrototype(\n"
-    "  const ::google::protobuf::MethodDescriptor* method) const;\n");
-
-  printer->Outdent();
-  printer->Print(vars_,
-    "\n"
-    " private:\n"
-    "  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS($classname$);\n"
-    "};\n"
-    "\n");
-}
-
-void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  printer->Print(vars_,
-    "class $dllexport$$classname$_Stub : public $classname$ {\n"
-    " public:\n");
-
-  printer->Indent();
-
-  printer->Print(vars_,
-    "$classname$_Stub(::muduo::net::RpcChannel* channel);\n"
-//    "$classname$_Stub(::muduo::RpcChannel* channel,\n"
-//    "                 ::google::protobuf::Service::ChannelOwnership ownership);\n"
-    "~$classname$_Stub();\n"
-    "\n"
-    "inline ::muduo::net::RpcChannel* channel() { return channel_; }\n"
-    "\n"
-    "// implements $classname$ ------------------------------------------\n"
-    "\n");
-
-  GenerateMethodSignatures(STUB, printer);
-
-  printer->Outdent();
-  printer->Print(vars_,
-    " private:\n"
-    "  ::muduo::net::RpcChannel* channel_;\n"
-    "  bool owns_channel_;\n"
-    "  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS($classname$_Stub);\n"
-    "};\n"
-    "\n");
-}
-
-void ServiceGenerator::GenerateMethodSignatures(
-    StubOrNon stub_or_non, io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  for (int i = 0; i < descriptor_->method_count(); i++) {
-    const MethodDescriptor* method = descriptor_->method(i);
-    map<string, string> sub_vars;
-    sub_vars["classname"] = descriptor_->name();
-    sub_vars["name"] = method->name();
-    sub_vars["input_type"] = ClassName(method->input_type(), true);
-    sub_vars["output_type"] = ClassName(method->output_type(), true);
-    sub_vars["output_typedef"] = ClassName(method->output_type(), true);
-    sub_vars["virtual"] = "virtual ";
-
-    if (stub_or_non == NON_STUB) {
-      printer->Print(sub_vars,
-        "$virtual$void $name$(const $input_type$Ptr& request,\n"
-        "                     const $output_type$* responsePrototype,\n"
-        "                     const ::muduo::net::RpcDoneCallback& done);\n");
-    } else {
-      printer->Print(sub_vars,
-        "using $classname$::$name$;\n"
-        "$virtual$void $name$(const $input_type$& request,\n"
-        "                     const ::std::function<void(const $output_typedef$Ptr&)>& done);\n");
+    {
+      std::unique_ptr<io::ZeroCopyOutputStream> output(
+          generator_context->OpenForInsert(basename + ".h", "includes"));
+      io::Printer printer(output.get(), '$');
+      printer.Print("#include <muduo/protorpc2/service.h>\n");
+      printer.Print("#include <memory>\n");
     }
-  }
-}
 
-// ===================================================================
+    std::vector<std::unique_ptr<ServiceGenerator>> service_generators;
 
-void ServiceGenerator::GenerateDescriptorInitializer(
-    io::Printer* printer, int index) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  map<string, string> vars;
-  vars["classname"] = descriptor_->name();
-  vars["index"] = SimpleItoa(index);
+    for (int i = 0; i < file->service_count(); i++) {
+      service_generators.emplace_back(
+          new ServiceGenerator(file->service(i), file->name(), i));
+    }
 
-  printer->Print(vars,
-    "$classname$_descriptor_ = file->service($index$);\n");
-}
+    {
+      std::unique_ptr<io::ZeroCopyOutputStream> output(
+          generator_context->OpenForInsert(basename + ".h", "namespace_scope"));
+      io::Printer printer(output.get(), '$');
 
-// ===================================================================
+      printer.Print("\n");
+      printer.Print(kThickSeparator);
+      printer.Print("\n");
 
-void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  printer->Print(vars_,
-    "$classname$::~$classname$() {}\n"
-    "\n"
-    "const ::google::protobuf::ServiceDescriptor* $classname$::descriptor() {\n"
-    "  protobuf_AssignDescriptorsOnce();\n"
-    "  return $classname$_descriptor_;\n"
-    "}\n"
-    "\n"
-    "const ::google::protobuf::ServiceDescriptor* $classname$::GetDescriptor() {\n"
-    "  protobuf_AssignDescriptorsOnce();\n"
-    "  return $classname$_descriptor_;\n"
-    "}\n"
-    "\n");
+      // Generate forward declarations of classes.
+      for (int i = 0; i < file->message_type_count(); i++) {
+        printer.Print("typedef ::std::shared_ptr<$classname$> $classname$Ptr;\n",
+                      "classname", ClassName(file->message_type(i), false));
+      }
 
-  // Generate methods of the interface.
-  GenerateNotImplementedMethods(printer);
-  GenerateCallMethod(printer);
-  GenerateGetPrototype(REQUEST, printer);
-  GenerateGetPrototype(RESPONSE, printer);
+      // Generate service definitions.
+      for (int i = 0; i < file->service_count(); i++)
+      {
+        printer.Print("\n");
+        printer.Print(kThinSeparator);
+        printer.Print("\n");
+        service_generators[i]->GenerateDeclarations(&printer);
+      }
+    }
 
-  // Generate stub implementation.
-  printer->Print(vars_,
-    "$classname$_Stub::$classname$_Stub(::muduo::net::RpcChannel* channel__)\n"
-    "  : channel_(channel__), owns_channel_(false) {}\n"
-//  "$classname$_Stub::$classname$_Stub(\n"
-//  "    ::google::protobuf::RpcChannel* channel__,\n"
-//  "    ::google::protobuf::Service::ChannelOwnership ownership)\n"
-//  "  : channel_(channel__),\n"
-//  "    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}\n"
-    "$classname$_Stub::~$classname$_Stub() {\n"
-    "}\n"
-    "\n");
+    {
+      std::unique_ptr<io::ZeroCopyOutputStream> output(
+          generator_context->OpenForInsert(basename + ".cc", "namespace_scope"));
+      io::Printer printer(output.get(), '$');
 
-  GenerateStubMethods(printer);
-}
+      // Generate service definitions.
+      for (int i = 0; i < file->service_count(); i++)
+      {
+        printer.Print(kThickSeparator);
+        printer.Print("\n");
+        service_generators[i]->GenerateImplementation(&printer);
+        printer.Print("\n");
+      }
+    }
 
-void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  for (int i = 0; i < descriptor_->method_count(); i++) {
-    const MethodDescriptor* method = descriptor_->method(i);
-    map<string, string> sub_vars;
-    sub_vars["classname"] = descriptor_->name();
-    sub_vars["name"] = method->name();
-    sub_vars["index"] = SimpleItoa(i);
-    sub_vars["input_type"] = ClassName(method->input_type(), true);
-    sub_vars["output_type"] = ClassName(method->output_type(), true);
-
-    printer->Print(sub_vars,
-      "void $classname$::$name$(const $input_type$Ptr&,\n"
-      "                         const $output_type$*,\n"
-      "                         const ::muduo::net::RpcDoneCallback& done) {\n"
-   // "  controller->SetFailed(\"Method $name$() not implemented.\");\n"
-      "  assert(0);\n"
-      "  done(NULL);\n"
-      "}\n"
-      "\n");
-  }
-}
-
-void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  printer->Print(vars_,
-    "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                             const ::google::protobuf::MessagePtr& request,\n"
-    "                             const ::google::protobuf::Message* responsePrototype,\n"
-    "                             const ::muduo::net::RpcDoneCallback& done) {\n"
-    "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
-    "  switch(method->index()) {\n");
-
-  for (int i = 0; i < descriptor_->method_count(); i++) {
-    const MethodDescriptor* method = descriptor_->method(i);
-    map<string, string> sub_vars;
-    sub_vars["name"] = method->name();
-    sub_vars["index"] = SimpleItoa(i);
-    sub_vars["input_type"] = ClassName(method->input_type(), true);
-    sub_vars["output_type"] = ClassName(method->output_type(), true);
-
-    // Note:  down_cast does not work here because it only works on pointers,
-    //   not references.
-    printer->Print(sub_vars,
-      "    case $index$:\n"
-      "      $name$(::google::protobuf::down_pointer_cast< $input_type$>(request),\n"
-      "             ::google::protobuf::down_cast<const $output_type$*>(responsePrototype),\n"
-      "             done);\n"
-      "      break;\n");
+    return true;
   }
 
-  printer->Print(vars_,
-    "    default:\n"
-    "      GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n"
-    "      break;\n"
-    "  }\n"
-    "}\n"
-    "\n");
-}
+ private:
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RpcGenerator);
+};
 
-void ServiceGenerator::GenerateGetPrototype(RequestOrResponse which,
-                                            io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  if (which == REQUEST) {
-    printer->Print(vars_,
-      "const ::google::protobuf::Message& $classname$::GetRequestPrototype(\n");
-  } else {
-    printer->Print(vars_,
-      "const ::google::protobuf::Message& $classname$::GetResponsePrototype(\n");
-  }
-
-  printer->Print(vars_,
-    "    const ::google::protobuf::MethodDescriptor* method) const {\n"
-    "  GOOGLE_DCHECK_EQ(method->service(), descriptor());\n"
-    "  switch(method->index()) {\n");
-
-  for (int i = 0; i < descriptor_->method_count(); i++) {
-    const MethodDescriptor* method = descriptor_->method(i);
-    const Descriptor* type =
-      (which == REQUEST) ? method->input_type() : method->output_type();
-
-    map<string, string> sub_vars;
-    sub_vars["index"] = SimpleItoa(i);
-    sub_vars["type"] = ClassName(type, true);
-
-    printer->Print(sub_vars,
-      "    case $index$:\n"
-      "      return $type$::default_instance();\n");
-  }
-
-  printer->Print(vars_,
-    "    default:\n"
-    "      GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n"
-    "      return *reinterpret_cast< ::google::protobuf::Message*>(NULL);\n"
-    "  }\n"
-    "}\n"
-    "\n");
-}
-
-void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
-  if (kTrace) fprintf(stderr, "%s %d\n", __FUNCTION__, __LINE__);
-  for (int i = 0; i < descriptor_->method_count(); i++) {
-    const MethodDescriptor* method = descriptor_->method(i);
-    map<string, string> sub_vars;
-    sub_vars["classname"] = descriptor_->name();
-    sub_vars["name"] = method->name();
-    sub_vars["index"] = SimpleItoa(i);
-    sub_vars["input_type"] = ClassName(method->input_type(), true);
-    sub_vars["output_type"] = ClassName(method->output_type(), true);
-    sub_vars["output_typedef"] = ClassName(method->output_type(), true);
-
-    printer->Print(sub_vars,
-      "void $classname$_Stub::$name$(const $input_type$& request,\n"
-      "                              const ::std::function<void(const $output_typedef$Ptr&)>& done) {\n"
-      "  channel_->CallMethod(descriptor()->method($index$),\n"
-      "                       request, &$output_type$::default_instance(), done);\n"
-      "}\n");
-  }
-}
-
-
+}  // namespace muduorpc
 }  // namespace cpp
 }  // namespace compiler
 }  // namespace protobuf
 }  // namespace google
 
-namespace gpb = google::protobuf;
 namespace gpbc = google::protobuf::compiler;
 
 int main(int argc, char* argv[])
 {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
-  gpbc::cpp::CppGenerator generator;
+  gpbc::cpp::muduorpc::RpcGenerator generator;
   return gpbc::PluginMain(argc, argv, &generator);
 }

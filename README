@@ -1,10 +1,14 @@
 Muduo Protorpc - Google Prorobuf RPC based on Muduo
-Copyright (c) 2012, Shuo Chen.  All rights reserved.
+Copyright (c) 2012-2016, Shuo Chen.  All rights reserved.
 http://github.com/chenshuo/muduo-protorpc
 
-Requires Muduo 1.0.0 or above.
-Requires Protobuf 2.4.1.
-*** If you are using Protobuf 2.5.0, apply protobuf-2.5.0.diff.
+Requires Muduo cpp11 branch.
 
 $ sudo apt-get install libprotoc-dev protobuf-compiler
 $ sudo apt-get install libprotobuf-dev cmake
+$ git clone https://github.com/chenshuo/muduo.git
+$ git clone https://github.com/chenshuo/muduo-protorpc.git
+$ cd muduo && git checkout cpp11 && ./build.sh install
+$ cd muduo-protorpc && ./build.sh
+
+Check binaries in ../build/protorpc-release/bin/

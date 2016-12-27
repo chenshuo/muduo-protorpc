@@ -1,6 +1,6 @@
 package collect;
 
-option cc_generic_services = true;
+// option cc_generic_services = true;
 
 import "muduo/protorpc2/rpc2.proto";
 
