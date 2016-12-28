@@ -16,6 +16,9 @@
 #include <muduo/net/protorpc/RpcCodec.h>
 
 #include <google/protobuf/stubs/common.h> // implicit_cast, down_cast
+#if GOOGLE_PROTOBUF_VERSION >= 3000000
+#include <google/protobuf/stubs/casts.h> // implicit_cast, down_cast
+#endif
 
 #include <map>
 
