@@ -8,5 +8,12 @@ os:
 install:
   - sudo apt-get install libboost-dev
   - sudo apt-get install libprotobuf-dev protobuf-compiler libprotoc-dev
+  - sudo apt-get install libc-ares-dev libboost-test-dev
+  - pushd .
+  - cd ..
+  - git clone --depth=5 --branch=cpp11 https://github.com/chenshuo/muduo.git
+  - cd muduo
+  - BUILD_NO_EXAMPLES=1 ./build.sh install
+  - popd
 script:
   - ./build.sh

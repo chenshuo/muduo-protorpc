@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 2.8)
 project(muduo-protorpc C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "debug")
+  set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 if(NOT MUDUO_PATH)
-  set(MUDUO_PATH "/home/$ENV{USER}/build/${CMAKE_BUILD_TYPE}-install")
+  set(MUDUO_PATH "/home/$ENV{USER}/build/${CMAKE_BUILD_TYPE}-install-cpp11")
 endif()
 
 set(CXX_FLAGS
