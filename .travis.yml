@@ -1,0 +1,12 @@
+language: cpp
+sudo: required
+dist: trusty
+compiler:
+  - gcc
+os:
+  - linux
+install:
+  - sudo apt-get install libboost-dev
+  - sudo apt-get install libprotobuf-dev protobuf-compiler libprotoc-dev
+script:
+  - ./build.sh
