@@ -5,6 +5,9 @@ compiler:
   - gcc
 os:
   - linux
+env:
+  - BUILD_TYPE=debug
+  - BUILD_TYPE=release
 install:
   - sudo apt-get install libboost-dev
   - sudo apt-get install libprotobuf-dev protobuf-compiler libprotoc-dev
@@ -13,6 +16,7 @@ install:
   - cd ..
   - git clone --depth=5 --branch=cpp11 https://github.com/chenshuo/muduo.git
   - cd muduo
+  - if [ "$CXX" == "clang++" ]; then patch -p1 < clang.diff; fi
   - BUILD_NO_EXAMPLES=1 ./build.sh install
   - popd
 script:
