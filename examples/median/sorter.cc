@@ -4,7 +4,8 @@
 #include <muduo/net/EventLoop.h>
 #include <muduo/protorpc2/RpcServer.h>
 
-#include <algorithm>
+#include <algorithm>  // std::sort
+#include <numeric>  // std::accumulate
 #include <iostream>
 
 using namespace muduo;

@@ -206,6 +206,7 @@ int main(int argc, char* argv[])
     collector.connect();
     LOG_INFO << "All connected";
     collector.run();
+    // FIXME: proper exit
   }
   else
   {
