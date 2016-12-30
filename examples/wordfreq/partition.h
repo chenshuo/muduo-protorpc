@@ -14,6 +14,7 @@ namespace wordfreq
 typedef std::vector<int64_t> GetHistogram(const std::vector<int64_t>& pivots);
 
 // return pivots
+// http://pcl.intel-research.net/publications/CloudRAMsort-2012.pdf
 // FIXME: test for edge cases
 inline std::vector<int64_t> partition(int64_t maxKey,
                                       int64_t keyCount,
