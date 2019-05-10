@@ -2,6 +2,7 @@
 #define MUDUO_PROTORPC_ZURG_HEARTBEAT_H
 
 #include <muduo/base/Types.h>
+#include <muduo/net/EventLoop.h>
 #include <memory>
 #include <string>
 
