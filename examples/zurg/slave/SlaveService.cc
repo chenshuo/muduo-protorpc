@@ -106,7 +106,7 @@ void SlaveServiceImpl::getFileChecksumDone(const GetFileChecksumRequestPtr& requ
   GetFileChecksumResponse response;
   for (int i = 0; i < request->files_size(); ++i)
   {
-    md5sums[request->files(i)].CopyToStdString(response.add_md5sums());
+    md5sums[request->files(i)].CopyToString(response.add_md5sums());
   }
   done(&response);
 }
